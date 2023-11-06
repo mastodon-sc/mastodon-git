@@ -1,147 +1,23 @@
-# Mastodon Git Collaboration Tools - Step by Step Tutorials
-
-## Installation
-
-You need to activate two update sites in Fiji:
-
- - https://sites.imagej.net/TomancakLab
- - https://sites.imagej.net/Maarzt 
-
-(The second update site is not in the list of update sites. You need to add it manually by clicking “Add Unlisted Site”)
-
-Detailed instructions are below: Tutorial
-
-## Installation - Detailed Step-by-Step Instructions
-
-You need to activate two update sites in Fiji to install the Mastodon Git collaboration tools:
-
- - https://sites.imagej.net/TomancakLab
- - https://sites.imagej.net/Maarzt 
-
-(The second update site is not in the list of update sites.
-You need to add it manually by clicking “Add Unlisted Site”)
-
-Also make sure not to activate too many other update sites.
-
-Here is a detailed step by step tutorial how to activate the update sites:
-
-Start ImageJ Updater
-
-![image](images/image18.png)
-
-Click Manage Update Sites:
-
-![image](images/image15.png)
-
-Search the TomancakLab update site and select it:
-
-![image](images/image2.png)
-
-Next: Click “Add Unlisted Site”. A new almost empty line will appear in the table.
-
-Please specify the URL: “https://sites.imagej.net/Maarzt/”
-
-![image](images/image1.png)
-
-Change Name from “New” to “Maarzt” and select the new entry:
-
-![image](images/image17.png)
-
-Click “Apply and Close”
-
-![image](images/image32.png)
-
-Click “Apply Changes”
-
-![image](images/image13.png)
-
-The final step is to restart Fiji, after this you should see an entry “Plugins > Mastodon Git > Download Shared Project” in the menu:
-
-## Tutorial: How to Share a Project?
-
-### 1. Create Empty Repository at GitLab
-
-In your browser open: https://git.mpi-cbg.de
-
-![image](images/image12.png)
-
-Click “Sign in”
-
-![image](images/image8.png)
-
-You will see a list of project. Please click “New project” button in the top right corner:
-
-![image](images/image20.png)
-
-Next click “Create blank project”:
-
-![image](images/image11.png)
-
-Provide project name and maybe a description. Then click “Create project”
-
-![image](images/image10.png)
-
-You will now see the landing page of your newly created git repository:
-
-![image](images/image31.png)
-
-Next click “Clone” and copy the “https://git….” URL
-
-![image](images/image29.png)
-
-This URL will later be used to share the project from within Mastodon.
-
-### 2. Upload Mastodon Project to GitLab
-
-Open your Mastodon project on your computer with Fiji
-
-![image](images/image9.png)
-
-In the Mastodon menu click “Plugins > Git > Initialize > Share Project”
-
-![image](images/image26.png)
-
-A window will open. In this window provide the URL that we copied at the end of step 1. And
-
-![image](images/image22.png)
-
-You will be asked for username and password
-
-![image](images/image14.png)
-
-The mastodon project has now been uploaded to the GitLab server you can verify by going to the the git repositories landing page. In our case:
-
-![image](images/image28.png)
-
-https://git.mpi-cbg.de/arzt/trackathon-lyon (The git repository is private. You can only access the landing page, if you are invited to the repository.)
-
-You should see a entry “mastodon.project”
-
-
-
 ## Tutorial: How to Contribute to a Shared Project?
+**(With Mastodon Git Collaboration Tools)**
 
 ### 1. Get access to the repository
 
-Use your user account to log into https://git.mpi-cbg.de
+The first step is to get access to the git repository that is used to share a Mastodon project.
 
-(You can only be invited to a repository after you logged into the gitlab server for the first time)
+Mastodon projects are most likely shared via private git repositories.
+The owner of the project / repository might have sent you a link, and asked you to contribute to the project.
+If you click on this link you will be asked for username and password. 
+You will need to create an account, if you don’t have one already.
+After you have created an account you need to log in, and then ask the project owner to invite you to the project.
+You will then receive an email with a link to accept the invitation.
+Only after you have accepted the invitation you will be able to follow the next steps and download the project.
 
-Ask the owner of the “trackathon-lyon” for an invitation to the repository.
+**Alternative:**
 
-You should get an invitation email. Please confirm the invitation.
-
-After this you should be able to open the landing page of the git repository: https://git.mpi-cbg.de/arzt/trackathon-lyon
-
-(The repository is private, you will see an error message if you are not invited to the repository yet)
-
-Alternative:
-
-There’s an alternative, if logging into git.mpi-cbg.de doesn’t work for you.
-Ask the owner of the shared project for an access token.
-This access token can be used with the Mastodon Git collaboration tools to clone
-the project and to upload changes.
-When asked for username and password, you can simply specify the access token as the username and leave the password empty.
+The owner of the shared project can also send you a socalled “access token”.
+This works without the need for an account on the GitLab server.
+The trick is to use the access token as username and leave the password field empty.
 
 ### 2. Download Shared Project
 

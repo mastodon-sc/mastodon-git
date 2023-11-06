@@ -1,0 +1,14 @@
+/target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.next
+.DS_Store
+.classpath
+.project
+.settings/
+/samples/
+*.ucls
+.idea/
+*.iml
+*.bak
+debug.yaml

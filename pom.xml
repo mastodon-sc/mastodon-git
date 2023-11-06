@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>org.scijava</groupId>
+		<artifactId>pom-scijava</artifactId>
+		<version>37.0.0</version>
+	</parent>
+
+	<groupId>org.mastodon</groupId>
+	<artifactId>mastodon-git</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+
+	<name>Mastodon Git Collaboration Tools</name>
+	<description>A Mastodon plugin that allow to collaborate on a dataset via git.</description>
+	<url>https://github.com/maarzt/mastodon-git</url>
+	<inceptionYear>2023</inceptionYear>
+	<organization>
+		<name>Mastodon Science</name>
+		<url>http://github.com/mastodon-sc</url>
+	</organization>
+	<licenses>
+		<license>
+			<name>Simplified BSD License</name>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.mastodon</groupId>
+			<artifactId>mastodon</artifactId>
+			<version>${mastodon.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>sc.fiji</groupId>
+			<artifactId>spim_data</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.scijava</groupId>
+			<artifactId>ui-behaviour</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>mpicbg</groupId>
+			<artifactId>mpicbg</artifactId>
+		</dependency>
+
+		<!-- Test dependencies -->
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>net.imagej</groupId>
+			<artifactId>imagej-legacy</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+	</dependencies>
+
+	<mailingLists>
+		<mailingList>
+			<name>ImageJ Forum</name>
+			<archive>http://forum.imagej.net/</archive>
+		</mailingList>
+	</mailingLists>
+
+	<scm>
+		<connection>scm:git:https:github.com/maarzt/mastodon-git</connection>
+		<developerConnection>scm:git:git@github.com:maarzt/mastodon-git</developerConnection>
+		<tag>HEAD</tag>
+		<url>https://github.com/maarzt/mastodon-git</url>
+	</scm>
+	<issueManagement>
+		<system>GitHub</system>
+		<url>https://github.com/maarzt/mastodon-git/issues</url>
+	</issueManagement>
+	<ciManagement>
+		<system>GitHub Actions</system>
+		<url>https://github.com/maarzt/mastodon-git/actions</url>
+	</ciManagement>
+
+	<properties>
+		<package-name>org.mastodon</package-name>
+		<license.licenseName>bsd_2</license.licenseName>
+		<license.projectName>mastodon-git</license.projectName>
+		<license.organizationName>Mastodon authors</license.organizationName>
+		<license.copyrightOwners>Matthias Arzt</license.copyrightOwners>
+
+		<mastodon.version>1.0.0-beta-27-SNAPSHOT</mastodon.version>
+
+		<!-- NB: Deploy releases to the SciJava Maven repository. -->
+		<releaseProfiles>sign,deploy-to-scijava</releaseProfiles>
+	</properties>
+
+	<developers>
+		<developer>
+			<id>maarzt</id>
+			<name>Matthias Arzt</name>
+			<email>arzt@mpi-cbg.de</email>
+			<url>https://imagej.net/people/maarzt</url>
+			<organization>MPI-CBG</organization>
+			<organizationUrl>http://www.mpi-cbg.de/</organizationUrl>
+			<roles>
+				<role>lead</role>
+				<role>developer</role>
+			</roles>
+		</developer>
+	</developers>
+
+	<contributors><contributor><name>none</name></contributor></contributors>
+
+	<repositories>
+		<repository>
+			<id>scijava.public</id>
+			<url>https://maven.scijava.org/content/groups/public</url>
+		</repository>
+	</repositories>
+
+	<build>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>net.revelc.code.formatter</groupId>
+					<artifactId>formatter-maven-plugin</artifactId>
+					<version>${formatter-maven-plugin.version}</version>
+					<configuration>
+						<configFile>mastodon-coding-style.xml</configFile>
+					</configuration>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+	</build>
+</project>

@@ -34,16 +34,25 @@
 			<version>${mastodon.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>sc.fiji</groupId>
-			<artifactId>spim_data</artifactId>
+			<groupId>org.mastodon</groupId>
+			<artifactId>mastodon-tomancak</artifactId>
+			<version>0.3.2-SNAPSHOT</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.eclipse.jgit</groupId>
+			<artifactId>org.eclipse.jgit</artifactId>
+			<version>5.13.2.202306221912-r</version>
 		</dependency>
 		<dependency>
-			<groupId>org.scijava</groupId>
-			<artifactId>ui-behaviour</artifactId>
+			<groupId>org.eclipse.jgit</groupId>
+			<artifactId>org.eclipse.jgit.ssh.apache</artifactId>
+			<version>5.13.2.202306221912-r</version>
 		</dependency>
 		<dependency>
-			<groupId>mpicbg</groupId>
-			<artifactId>mpicbg</artifactId>
+			<groupId>org.eclipse.jgit</groupId>
+			<artifactId>org.eclipse.jgit.ui</artifactId>
+			<version>5.13.2.202306221912-r</version>
 		</dependency>
 
 		<!-- Test dependencies -->

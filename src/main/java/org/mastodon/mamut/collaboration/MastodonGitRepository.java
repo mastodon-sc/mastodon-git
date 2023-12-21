@@ -147,7 +147,7 @@ public class MastodonGitRepository
 	{
 		WindowManager windowManager = new WindowManager( context );
 		Path path = directory.toPath().resolve( "mastodon.project" );
-		windowManager.getProjectManager().openWithDialog( new MamutProjectIO().load( path.toAbsolutePath().toString() ) );
+		windowManager.getProjectManager().open( new MamutProjectIO().load( path.toAbsolutePath().toString() ) );
 		new MainWindow( windowManager ).setVisible( true );
 	}
 
@@ -226,7 +226,7 @@ public class MastodonGitRepository
 			else
 				git.checkout().setName( branchName ).call();
 		}
-		windowManager.getProjectManager().openWithDialog( new MamutProjectIO().load( projectRoot.getAbsolutePath() ) );
+		windowManager.getProjectManager().open( new MamutProjectIO().load( projectRoot.getAbsolutePath() ) );
 	}
 
 	private synchronized String getSimpleName( String branchName )
@@ -356,7 +356,7 @@ public class MastodonGitRepository
 	private synchronized void reloadFromDisc() throws IOException, SpimDataException
 	{
 		MamutProject project = windowManager.getProjectManager().getProject();
-		windowManager.getProjectManager().openWithDialog( project );
+		windowManager.getProjectManager().open( project );
 	}
 
 	public synchronized void reset() throws Exception

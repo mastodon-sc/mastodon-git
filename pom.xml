@@ -36,7 +36,7 @@
 		<dependency>
 			<groupId>org.mastodon</groupId>
 			<artifactId>mastodon-tomancak</artifactId>
-			<version>0.3.2-SNAPSHOT</version>
+			<version>${mastodon-tomancak.version}</version>
 		</dependency>
 
 		<dependency>
@@ -48,6 +48,16 @@
 			<groupId>org.eclipse.jgit</groupId>
 			<artifactId>org.eclipse.jgit.ssh.apache</artifactId>
 			<version>5.13.2.202306221912-r</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.apache.sshd</groupId>
+					<artifactId>sshd-osgi</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>jcl-over-slf4j</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.jgit</groupId>
@@ -98,7 +108,8 @@
 		<license.organizationName>Mastodon authors</license.organizationName>
 		<license.copyrightOwners>Matthias Arzt</license.copyrightOwners>
 
-		<mastodon.version>1.0.0-beta-27-SNAPSHOT</mastodon.version>
+		<mastodon.version>1.0.0-beta-26</mastodon.version>
+		<mastodon-tomancak.version>0.3.0</mastodon-tomancak.version>
 
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
 		<releaseProfiles>sign,deploy-to-scijava</releaseProfiles>

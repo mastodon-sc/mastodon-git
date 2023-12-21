@@ -137,6 +137,7 @@ public class MastodonGitController extends BasicMamutPlugin
 			MastodonGitController::mergeBranch );
 
 	private static final List< String > IN_REPOSITORY_ACTIONS = Arrays.asList(
+			SYNCHRONIZE_ACTION_KEY,
 			COMMIT_ACTION_KEY,
 			PUSH_ACTION_KEY,
 			PULL_ACTION_KEY,

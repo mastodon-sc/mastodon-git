@@ -28,8 +28,8 @@
  */
 package org.mastodon.mamut.collaboration.utils;
 
-import org.mastodon.ui.keymap.CommandDescriptionProvider;
-import org.mastodon.ui.keymap.CommandDescriptions;
+import org.scijava.ui.behaviour.io.gui.CommandDescriptionProvider;
+import org.scijava.ui.behaviour.io.gui.CommandDescriptions;
 
 /**
  * This class simplifies the task of implementing a {@link CommandDescriptionProvider}.
@@ -41,9 +41,9 @@ public abstract class BasicDescriptionProvider extends CommandDescriptionProvide
 
 	private final ActionDescriptions< ? > actionDescriptions;
 
-	protected BasicDescriptionProvider( ActionDescriptions< ? > actionDescriptions, String... contexts )
+	protected BasicDescriptionProvider( ActionDescriptions< ? > actionDescriptions, Scope scope, String... contexts )
 	{
-		super( contexts );
+		super( scope, contexts );
 		this.actionDescriptions = actionDescriptions;
 	}
 

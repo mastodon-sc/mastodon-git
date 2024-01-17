@@ -50,24 +50,24 @@ import org.eclipse.jgit.transport.PushResult;
 import org.eclipse.jgit.transport.RemoteRefUpdate;
 import org.mastodon.graph.io.RawGraphIO;
 import org.mastodon.mamut.MainWindow;
-import org.mastodon.mamut.WindowManager;
+import org.mastodon.mamut.ProjectModel;
 import org.mastodon.mamut.collaboration.exceptions.MastodonGitException;
 import org.mastodon.mamut.collaboration.settings.MastodonGitSettingsService;
 import org.mastodon.mamut.collaboration.utils.ConflictUtils;
 import org.mastodon.mamut.feature.MamutRawFeatureModelIO;
+import org.mastodon.mamut.io.ProjectLoader;
+import org.mastodon.mamut.io.ProjectSaver;
+import org.mastodon.mamut.io.project.MamutProject;
+import org.mastodon.mamut.io.project.MamutProjectIO;
 import org.mastodon.mamut.model.Link;
 import org.mastodon.mamut.model.Model;
 import org.mastodon.mamut.model.Spot;
-import org.mastodon.mamut.project.MamutProject;
-import org.mastodon.mamut.project.MamutProjectIO;
 import org.mastodon.mamut.collaboration.credentials.PersistentCredentials;
 import org.mastodon.mamut.collaboration.exceptions.GraphMergeConflictException;
 import org.mastodon.mamut.collaboration.exceptions.GraphMergeException;
 import org.mastodon.mamut.tomancak.merging.Dataset;
 import org.mastodon.mamut.tomancak.merging.MergeDatasets;
 import org.scijava.Context;
-
-import mpicbg.spim.data.SpimDataException;
 
 // make it one synchronized class per repository
 // don't allow to open a repository twice (maybe read only)
@@ -76,18 +76,18 @@ public class MastodonGitRepository
 
 	private static final PersistentCredentials credentials = new PersistentCredentials();
 
-	private final WindowManager windowManager;
+	private final ProjectModel projectModel;
 
 	private final MastodonGitSettingsService settingsService;
 
-	public MastodonGitRepository( WindowManager windowManager )
+	public MastodonGitRepository( ProjectModel projectModel )
 	{
-		this.windowManager = windowManager;
-		settingsService = windowManager.getContext().service( MastodonGitSettingsService.class );
+		this.projectModel = projectModel;
+		settingsService = projectModel.getContext().service( MastodonGitSettingsService.class );
 	}
 
 	public static MastodonGitRepository shareProject(
-			WindowManager windowManager,
+			ProjectModel projectModel,
 			File directory,
 			String repositoryURL )
 			throws Exception
@@ -105,7 +105,7 @@ public class MastodonGitRepository
 		if ( Files.exists( mastodonProjectPath ) )
 			throw new MastodonGitException( "The repository already contains a shared mastodon project: " + repositoryURL );
 		Files.createDirectory( mastodonProjectPath );
-		windowManager.getProjectManager().saveProject( mastodonProjectPath.toFile() );
+		ProjectSaver.saveProject( mastodonProjectPath.toFile(), projectModel );
 		Files.copy( mastodonProjectPath.resolve( "gui.xml" ), mastodonProjectPath.resolve( "gui.xml_remote" ) );
 		Files.copy( mastodonProjectPath.resolve( "project.xml" ), mastodonProjectPath.resolve( "project.xml_remote" ) );
 		Files.copy( mastodonProjectPath.resolve( "dataset.xml.backup" ), mastodonProjectPath.resolve( "dataset.xml.backup_remote" ) );
@@ -119,7 +119,7 @@ public class MastodonGitRepository
 		git.commit().setMessage( "Share mastodon project" ).call();
 		git.push().setCredentialsProvider( credentials.getSingleUseCredentialsProvider() ).setRemote( "origin" ).call();
 		git.close();
-		return new MastodonGitRepository( windowManager );
+		return new MastodonGitRepository( projectModel );
 	}
 
 	private static boolean isEmpty( File directory )
@@ -130,7 +130,7 @@ public class MastodonGitRepository
 
 	public static void cloneRepository( String repositoryURL, File directory ) throws Exception
 	{
-		try (Git git = Git.cloneRepository()
+		try (Git ignored = Git.cloneRepository()
 				.setURI( repositoryURL )
 				.setCredentialsProvider( credentials.getSingleUseCredentialsProvider() )
 				.setDirectory( directory )
@@ -145,16 +145,8 @@ public class MastodonGitRepository
 
 	public static void openProjectInRepository( Context context, File directory ) throws Exception
 	{
-		WindowManager windowManager = new WindowManager( context );
-		Path path = directory.toPath().resolve( "mastodon.project" );
-		windowManager.getProjectManager().open( new MamutProjectIO().load( path.toAbsolutePath().toString() ) );
-		new MainWindow( windowManager ).setVisible( true );
-	}
-
-	public synchronized void commit( String message ) throws Exception
-	{
-		windowManager.getProjectManager().saveProject();
-		commitWithoutSave( message );
+		ProjectModel newProject = ProjectLoader.open( directory.toPath().resolve( "mastodon.project" ).toString(), context );
+		new MainWindow( newProject ).setVisible( true );
 	}
 
 	public void commitWithoutSave( String message ) throws Exception
@@ -205,7 +197,8 @@ public class MastodonGitRepository
 
 	public synchronized void switchBranch( String branchName ) throws Exception
 	{
-		File projectRoot = windowManager.getProjectManager().getProject().getProjectRoot();
+		MamutProject project = projectModel.getProject();
+		File projectRoot = project.getProjectRoot();
 		try (Git git = initGit( projectRoot ))
 		{
 			ensureClean( git, "switching the branch" );
@@ -226,7 +219,7 @@ public class MastodonGitRepository
 			else
 				git.checkout().setName( branchName ).call();
 		}
-		windowManager.getProjectManager().open( new MamutProjectIO().load( projectRoot.getAbsolutePath() ) );
+		reloadFromDisc();
 	}
 
 	private synchronized String getSimpleName( String branchName )
@@ -261,8 +254,8 @@ public class MastodonGitRepository
 
 	public synchronized void mergeBranch( String selectedBranch ) throws Exception
 	{
-		Context context = windowManager.getContext();
-		MamutProject project = windowManager.getProjectManager().getProject();
+		Context context = projectModel.getContext();
+		MamutProject project = projectModel.getProject();
 		File projectRoot = project.getProjectRoot();
 		try (Git git = initGit())
 		{
@@ -282,8 +275,8 @@ public class MastodonGitRepository
 
 	public synchronized void pull() throws Exception
 	{
-		Context context = windowManager.getContext();
-		MamutProject project = windowManager.getProjectManager().getProject();
+		Context context = projectModel.getContext();
+		MamutProject project = projectModel.getProject();
 		File projectRoot = project.getProjectRoot();
 		try (Git git = initGit())
 		{
@@ -306,7 +299,7 @@ public class MastodonGitRepository
 		}
 	}
 
-	private void automaticMerge( Context context, MamutProject project, File projectRoot, Git git ) throws Exception
+	private void automaticMerge( Context context, MamutProject project, File projectRoot, Git git )
 	{
 		try
 		{
@@ -337,7 +330,7 @@ public class MastodonGitRepository
 		project.setProjectRoot( project.getProjectRoot() );
 		try (final MamutProject.ProjectWriter writer = project.openForWriting())
 		{
-			new MamutProjectIO().save( project, writer );
+			MamutProjectIO.save( project, writer );
 			final RawGraphIO.GraphToFileIdMap< Spot, Link > idmap = model.saveRaw( writer );
 			MamutRawFeatureModelIO.serialize( context, model, idmap, writer );
 		}
@@ -345,7 +338,7 @@ public class MastodonGitRepository
 
 	private static Model merge( Dataset dsA, Dataset dsB )
 	{
-		final MergeDatasets.OutputDataSet output = new MergeDatasets.OutputDataSet();
+		final MergeDatasets.OutputDataSet output = new MergeDatasets.OutputDataSet( new Model() );
 		double distCutoff = 1000;
 		double mahalanobisDistCutoff = 1;
 		double ratioThreshold = 2;
@@ -353,10 +346,9 @@ public class MastodonGitRepository
 		return output.getModel();
 	}
 
-	private synchronized void reloadFromDisc() throws IOException, SpimDataException
+	private synchronized void reloadFromDisc() throws IOException
 	{
-		MamutProject project = windowManager.getProjectManager().getProject();
-		windowManager.getProjectManager().open( project );
+		throw new UnsupportedOperationException( "TODO implement reloadFromDisc()" );
 	}
 
 	public synchronized void reset() throws Exception
@@ -370,7 +362,7 @@ public class MastodonGitRepository
 
 	private synchronized Git initGit() throws IOException
 	{
-		File projectRoot = windowManager.getProjectManager().getProject().getProjectRoot();
+		File projectRoot = projectModel.getProject().getProjectRoot();
 		return initGit( projectRoot );
 	}
 
@@ -423,7 +415,7 @@ public class MastodonGitRepository
 
 	private void ensureClean( Git git, String title ) throws GitAPIException
 	{
-		windowManager.getProjectManager().saveProject();
+		ProjectSaver.saveProject( projectModel, null );
 		boolean clean = isClean( git );
 		if ( !clean )
 			throw new MastodonGitException( "There are uncommitted changes. Please add a save point before " + title + "." );
@@ -431,7 +423,7 @@ public class MastodonGitRepository
 
 	public boolean isClean() throws Exception
 	{
-		windowManager.getProjectManager().saveProject();
+		ProjectSaver.saveProject( projectModel, null );
 		try (Git git = initGit())
 		{
 			return isClean( git );

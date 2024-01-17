@@ -6,6 +6,7 @@ import org.mastodon.collection.RefList;
 import org.mastodon.collection.RefSet;
 import org.mastodon.collection.ref.RefArrayList;
 import org.mastodon.collection.ref.RefSetImp;
+import org.mastodon.mamut.KeyConfigScopes;
 import org.mastodon.mamut.collaboration.utils.ActionDescriptions;
 import org.mastodon.mamut.collaboration.utils.BasicDescriptionProvider;
 import org.mastodon.mamut.model.Link;
@@ -14,9 +15,9 @@ import org.mastodon.mamut.model.ModelGraph;
 import org.mastodon.mamut.model.Spot;
 import org.mastodon.mamut.plugin.MamutPlugin;
 import org.mastodon.mamut.collaboration.utils.BasicMamutPlugin;
-import org.mastodon.ui.keymap.CommandDescriptionProvider;
 import org.mastodon.ui.keymap.KeyConfigContexts;
 import org.scijava.plugin.Plugin;
+import org.scijava.ui.behaviour.io.gui.CommandDescriptionProvider;
 
 @Plugin( type = MamutPlugin.class )
 public class FixGraphInconsistenciesPlugin extends BasicMamutPlugin
@@ -40,7 +41,7 @@ public class FixGraphInconsistenciesPlugin extends BasicMamutPlugin
 
 	private void fixGraphInconsistencies()
 	{
-		Model model = getAppModel().getModel();
+		Model model = getProjectModel().getModel();
 		ModelGraph graph = model.getGraph();
 		flipBackwardsEdges( graph );
 		removeDoubleEdges( graph );
@@ -138,7 +139,7 @@ public class FixGraphInconsistenciesPlugin extends BasicMamutPlugin
 	{
 		public DescriptionProvider()
 		{
-			super( actionDescriptions, KeyConfigContexts.MASTODON, KeyConfigContexts.TRACKSCHEME );
+			super( actionDescriptions, KeyConfigScopes.MAMUT, KeyConfigContexts.MASTODON, KeyConfigContexts.TRACKSCHEME );
 		}
 	}
 }

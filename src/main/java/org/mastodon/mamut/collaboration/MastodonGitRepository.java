@@ -54,6 +54,7 @@ import org.mastodon.mamut.ProjectModel;
 import org.mastodon.mamut.collaboration.exceptions.MastodonGitException;
 import org.mastodon.mamut.collaboration.settings.MastodonGitSettingsService;
 import org.mastodon.mamut.collaboration.utils.ConflictUtils;
+import org.mastodon.mamut.collaboration.utils.ReloadFromDiskUtils;
 import org.mastodon.mamut.feature.MamutRawFeatureModelIO;
 import org.mastodon.mamut.io.ProjectLoader;
 import org.mastodon.mamut.io.ProjectSaver;
@@ -348,7 +349,7 @@ public class MastodonGitRepository
 
 	private synchronized void reloadFromDisc() throws IOException
 	{
-		throw new UnsupportedOperationException( "TODO implement reloadFromDisc()" );
+		ReloadFromDiskUtils.reloadFromDisk( projectModel );
 	}
 
 	public synchronized void reset() throws Exception

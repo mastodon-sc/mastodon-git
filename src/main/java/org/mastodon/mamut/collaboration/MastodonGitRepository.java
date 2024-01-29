@@ -44,8 +44,10 @@ import org.eclipse.jgit.api.ListBranchCommand;
 import org.eclipse.jgit.api.ResetCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.BranchConfig;
+import org.eclipse.jgit.lib.ConfigConstants;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.lib.StoredConfig;
 import org.eclipse.jgit.transport.PushResult;
 import org.eclipse.jgit.transport.RemoteRefUpdate;
 import org.mastodon.graph.io.RawGraphIO;
@@ -168,7 +170,27 @@ public class MastodonGitRepository
 		{
 			Iterable< PushResult > results = git.push().setCredentialsProvider( credentials.getSingleUseCredentialsProvider() ).setRemote( "origin" ).call();
 			raiseExceptionOnUnsuccessfulPush( results );
+			String branchName = getSimpleName( getCurrentBranch() );
+			if ( !upstreamIsConfigured( git, branchName ) )
+				setUpstream( git, branchName );
 		}
+	}
+
+	private static void setUpstream( Git git, String branchName ) throws IOException
+	{
+		StoredConfig config = git.getRepository().getConfig();
+		config.setString( ConfigConstants.CONFIG_BRANCH_SECTION, branchName, "remote", "origin" );
+		config.setString( ConfigConstants.CONFIG_BRANCH_SECTION, branchName, "merge", "refs/heads/" + branchName );
+		config.save();
+	}
+
+	private static boolean upstreamIsConfigured( Git git, String branchName )
+	{
+		StoredConfig config = git.getRepository().getConfig();
+		String merge = config.getString( ConfigConstants.CONFIG_BRANCH_SECTION, branchName, "merge" );
+		if ( merge != null )
+			return true;
+		return false;
 	}
 
 	private static void raiseExceptionOnUnsuccessfulPush( Iterable< PushResult > results )
@@ -267,9 +289,7 @@ public class MastodonGitRepository
 			Dataset dsB = new Dataset( projectRoot.getAbsolutePath() );
 			git.checkout().setName( currentBranch ).call();
 			git.merge().setCommit( false ).include( git.getRepository().exactRef( selectedBranch ) ).call(); // TODO selected branch, should not be a string but a ref instead
-			Model mergedModel = merge( dsA, dsB );
-			saveModel( context, mergedModel, project );
-			commitWithoutSave( "Merge commit generated with Mastodon" );
+			mergeAndCommit( context, project, dsA, dsB, "Merge commit generated with Mastodon" );
 			reloadFromDisc();
 		}
 	}
@@ -309,12 +329,8 @@ public class MastodonGitRepository
 			git.checkout().setAllPaths( true ).setStage( CheckoutCommand.Stage.THEIRS ).call();
 			Dataset dsB = new Dataset( projectRoot.getAbsolutePath() );
 			git.checkout().setAllPaths( true ).setStage( CheckoutCommand.Stage.OURS ).call();
-			Model mergedModel = merge( dsA, dsB );
-			if ( ConflictUtils.hasConflict( mergedModel ) )
-				throw new GraphMergeConflictException();
-			ConflictUtils.removeMergeConflictTagSets( mergedModel );
-			saveModel( context, mergedModel, project );
-			commitWithoutSave( "Automatic merge by Mastodon during pull" );
+			String commitMessage = "Automatic merge by Mastodon during pull";
+			mergeAndCommit( context, project, dsA, dsB, commitMessage );
 		}
 		catch ( GraphMergeException e )
 		{
@@ -324,6 +340,16 @@ public class MastodonGitRepository
 		{
 			throw new GraphMergeException( "There was a failure, when merging changes to the Model.", t );
 		}
+	}
+
+	private void mergeAndCommit( Context context, MamutProject project, Dataset dsA, Dataset dsB, String commitMessage ) throws Exception
+	{
+		Model mergedModel = merge( dsA, dsB );
+		if ( ConflictUtils.hasConflict( mergedModel ) )
+			throw new GraphMergeConflictException();
+		ConflictUtils.removeMergeConflictTagSets( mergedModel );
+		saveModel( context, mergedModel, project );
+		commitWithoutSave( commitMessage );
 	}
 
 	private static void saveModel( Context context, Model model, MamutProject project ) throws IOException

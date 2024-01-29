@@ -30,8 +30,8 @@ public class ModelAsserts
 
 	public static void assertGraphEquals( ModelGraph a, ModelGraph b )
 	{
-		assertEquals( spotsAsStrings( a ), spotsAsStrings( b ) );
-		assertEquals( adjacencyAsStrings( a ), adjacencyAsStrings( b ) );
+		assertEquals( spotsAsString( a ), spotsAsString( b ) );
+		assertEquals( adjacencyAsString( a ), adjacencyAsString( b ) );
 	}
 
 	private static void assertTagSetModelEquals( Model a, Model b )
@@ -39,16 +39,16 @@ public class ModelAsserts
 		assertEquals( tagSetModelAsString( a ), tagSetModelAsString( b ) );
 	}
 
-	private static List< String > spotsAsStrings( ModelGraph graph )
+	private static String spotsAsString( ModelGraph graph )
 	{
 		List< String > strings = new ArrayList<>();
 		for ( Spot spot : graph.vertices() )
 			strings.add( spotToString( spot ) );
 		Collections.sort( strings );
-		return strings;
+		return String.join( "\n", strings );
 	}
 
-	private static List< String > adjacencyAsStrings( ModelGraph graph )
+	private static String adjacencyAsString( ModelGraph graph )
 	{
 		List< String > strings = new ArrayList<>();
 		Spot ref = graph.vertexRef();
@@ -62,12 +62,14 @@ public class ModelAsserts
 			strings.add( sb.toString() );
 		}
 		Collections.sort( strings );
-		return strings;
+		return String.join( "\n", strings );
 	}
 
 	static String spotToString( Spot spot )
 	{
 		String label = spot.getLabel();
+		if ( label.equals( Integer.toString( spot.getInternalPoolIndex() ) ) )
+			label = "<null>";
 		int timepoint = spot.getTimepoint();
 		double[] position = new double[ 3 ];
 		spot.localize( position );

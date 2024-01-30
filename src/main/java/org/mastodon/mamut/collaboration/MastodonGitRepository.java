@@ -148,7 +148,10 @@ public class MastodonGitRepository
 
 	public static void openProjectInRepository( Context context, File directory ) throws Exception
 	{
-		ProjectModel newProject = ProjectLoader.open( directory.toPath().resolve( "mastodon.project" ).toString(), context );
+		String mastodonFile = directory.toPath().resolve( "mastodon.project" ).toString();
+		boolean restoreGUIState = true;
+		boolean authorizeSubstituteDummyData = true;
+		ProjectModel newProject = ProjectLoader.open( mastodonFile, context, restoreGUIState, authorizeSubstituteDummyData );
 		new MainWindow( newProject ).setVisible( true );
 	}
 

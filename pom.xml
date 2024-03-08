@@ -38,6 +38,11 @@
 			<artifactId>mastodon-tomancak</artifactId>
 			<version>${mastodon-tomancak.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>org.mastodon</groupId>
+			<artifactId>mastodon-collection</artifactId>
+			<version>1.0.0-beta-26-SNAPSHOT</version>
+		</dependency>
 
 		<dependency>
 			<groupId>org.eclipse.jgit</groupId>

@@ -12,8 +12,6 @@ import org.mastodon.mamut.collaboration.TestResources;
 import org.mastodon.mamut.io.ProjectLoader;
 import org.mastodon.mamut.io.project.MamutProjectIO;
 import org.mastodon.mamut.model.Model;
-import org.mastodon.mamut.model.ModelGraph;
-import org.mastodon.mamut.model.Spot;
 import org.scijava.Context;
 
 import mpicbg.spim.data.SpimDataException;
@@ -24,6 +22,12 @@ import mpicbg.spim.data.SpimDataException;
 public class ReloadFromDiskUtilsTest
 {
 
+	/**
+	 * This test opens a files "project1.mastodon" to "project6.mastodon" by copying
+	 * them to a temporary directory and then reloading the model from disk.
+	 * It checks that the model is the same, if reloaded from disk, as if it was
+	 * freshly loaded from the project file.
+	 */
 	@Test
 	public void testReloadFromDisk() throws IOException, URISyntaxException, SpimDataException
 	{

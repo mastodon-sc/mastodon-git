@@ -8,6 +8,7 @@ import org.mastodon.mamut.io.project.MamutProject;
 import org.mastodon.mamut.model.Link;
 import org.mastodon.mamut.model.Model;
 import org.mastodon.mamut.model.Spot;
+import org.mastodon.model.AbstractModelImporter;
 
 /**
  * Utility class that provides "reload from disk" functionality for
@@ -24,7 +25,10 @@ public class ReloadFromDiskUtils
 	 */
 	public static void reloadFromDisk( ProjectModel projectModel ) throws IOException
 	{
-		try (MamutProject.ProjectReader reader = projectModel.getProject().openForReading())
+		try (
+				MamutProject.ProjectReader reader = projectModel.getProject().openForReading();
+				ModelImporter ignored = new ModelImporter( projectModel.getModel() ); // this pauses listeners and resets the undo history
+		)
 		{
 			projectModel.getModel().loadRaw( reader );
 		}
@@ -40,4 +44,18 @@ public class ReloadFromDiskUtils
 		return model;
 	}
 
+	private static class ModelImporter extends AbstractModelImporter< Model > implements AutoCloseable
+	{
+		protected ModelImporter( Model model )
+		{
+			super( model );
+			startImport();
+		}
+
+		@Override
+		public void close()
+		{
+			finishImport();
+		}
+	}
 }

@@ -44,7 +44,7 @@ public class ReloadFromDiskUtilsTest
 				Path resource = TestResources.asPath( "reload/project" + i + ".mastodon" );
 				Files.copy( resource, projectFile, StandardCopyOption.REPLACE_EXISTING );
 				ReloadFromDiskUtils.reloadFromDisk( open );
-				Model expected = ReloadFromDiskUtils.loadModel( MamutProjectIO.load( resource.toString() ) );
+				Model expected = ModelIO.open( resource.toString() );
 				ModelAsserts.assertModelEquals( expected, open.getModel() );
 			}
 		}

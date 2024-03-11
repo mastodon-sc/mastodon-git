@@ -14,7 +14,7 @@ import org.eclipse.jgit.api.Git;
 import org.junit.Test;
 import org.mastodon.mamut.ProjectModel;
 import org.mastodon.mamut.collaboration.utils.ModelAsserts;
-import org.mastodon.mamut.collaboration.utils.ReloadFromDiskUtils;
+import org.mastodon.mamut.collaboration.utils.ModelIO;
 import org.mastodon.mamut.io.ProjectLoader;
 import org.mastodon.mamut.io.ProjectSaver;
 import org.mastodon.mamut.io.project.MamutProject;
@@ -274,7 +274,7 @@ public class MastodonGitRepositoryTest
 			example.repo2.commitWithoutSave( "commit B" );
 			example.repo2.pull();
 
-			Model expected = ReloadFromDiskUtils.loadModel( MamutProjectIO.load( TestResources.asPath( "merge/tiny-project_merged.mastodon" ).toString() ) );
+			Model expected = ModelIO.open( TestResources.asPath( "merge/tiny-project_merged.mastodon" ).toString() );
 			ModelAsserts.assertModelEquals( expected, example.projectModel2.getModel() );
 		}
 	}
@@ -300,7 +300,7 @@ public class MastodonGitRepositoryTest
 			example.repo1.mergeBranch( "refs/heads/branch-a" );
 			example.repo1.mergeBranch( "refs/heads/branch-b" );
 
-			Model expected = ReloadFromDiskUtils.loadModel( MamutProjectIO.load( TestResources.asPath( "merge/tiny-project_merged.mastodon" ).toString() ) );
+			Model expected = ModelIO.open( TestResources.asPath( "merge/tiny-project_merged.mastodon" ).toString() );
 			ModelAsserts.assertModelEquals( expected, example.projectModel1.getModel() );
 		}
 	}

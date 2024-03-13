@@ -1,4 +1,4 @@
-package org.mastodon.mamut.collaboration;
+package org.mastodon.mamut.collaboration.dialogs;
 
 import javax.swing.JDialog;
 import javax.swing.JOptionPane;

@@ -167,12 +167,12 @@ public class MastodonGitController extends BasicMamutPlugin
 
 	private void setAuthor()
 	{
-		SetAuthorDialog.setAuthorName( settingsService );
+		settingsService.askForAuthorName();
 	}
 
 	private void shareProject()
 	{
-		if ( !ensureAuthorNameIsSet( "Please set your author name before sharing a project." ) )
+		if ( !settingsService.ensureAuthorIsSet( "Please set your author name before sharing a project." ) )
 			return;
 
 		MastodonGitCreateRepository.Callback callback = ( File directory, String url ) -> {
@@ -195,7 +195,7 @@ public class MastodonGitController extends BasicMamutPlugin
 
 	private void commit()
 	{
-		if ( !ensureAuthorNameIsSet( "Please set your author name before adding a save point (commit)." ) )
+		if ( !settingsService.ensureAuthorIsSet( "Please set your author name before adding a save point (commit)." ) )
 			return;
 		run( "Add Save Point (Commit)", () -> {
 			if ( repository.isClean() )
@@ -255,7 +255,7 @@ public class MastodonGitController extends BasicMamutPlugin
 
 	private void mergeBranch()
 	{
-		if ( !ensureAuthorNameIsSet( "You need to set your author name before you can merge branches." ) )
+		if ( !settingsService.ensureAuthorIsSet( "You need to set your author name before you can merge branches." ) )
 			return;
 
 		try
@@ -277,7 +277,7 @@ public class MastodonGitController extends BasicMamutPlugin
 
 	private void pull()
 	{
-		if ( !ensureAuthorNameIsSet( "You need to set your author name before you can pull branches." ) )
+		if ( !settingsService.ensureAuthorIsSet( "You need to set your author name before you can pull branches." ) )
 			return;
 
 		run( "Download Changes (Pull)", () -> {
@@ -323,38 +323,6 @@ public class MastodonGitController extends BasicMamutPlugin
 		run( "Go Back To Last Save Point (Reset)", () -> repository.reset() );
 	}
 
-	/**
-	 * If the author name is not yet set, show a dialog that asks the user to set the author name.
-	 *
-	 * @param message A message that informs the user why the author name is needed.
-	 *                The message is shown in a dialog that asks the user if they want to set the author name.
-	 * @return true if the author name is set. False if the user cancels the dialog
-	 * and the author name is not set.
-	 */
-	private boolean ensureAuthorNameIsSet( String message )
-	{
-		if ( settingsService.isAuthorSpecified() )
-			return true;
-
-		if ( askWhetherToSetTheAuthorName( message ) )
-			setAuthor();
-
-		return settingsService.isAuthorSpecified();
-	}
-
-	/**
-	 * Shows a dialog that asks the user if they want to set the author name.
-	 * Returns true if the user agrees to set the author name, false otherwise.
-	 */
-	private static boolean askWhetherToSetTheAuthorName( String message )
-	{
-		String title = "Set Author Name";
-		String[] options = { "Set Author Name", "Cancel" };
-		int result = JOptionPane.showOptionDialog( null, message, title, JOptionPane.YES_NO_OPTION,
-				JOptionPane.PLAIN_MESSAGE, null, options, options[ 0 ] );
-		return result == JOptionPane.YES_OPTION;
-	}
-
 	private void showBranchName()
 	{
 		run( "Show Branch Name", () -> {
@@ -369,7 +337,7 @@ public class MastodonGitController extends BasicMamutPlugin
 
 	private void synchronize()
 	{
-		if ( !ensureAuthorNameIsSet( "Please set your author name before syncing with the remote changes." ) )
+		if ( !settingsService.ensureAuthorIsSet( "Please set your author name before syncing with the remote changes." ) )
 			return;
 
 		run( "Synchronize Changes", () -> {

@@ -2,7 +2,7 @@ package org.mastodon.mamut.collaboration.commands;
 
 import java.io.File;
 
-import org.mastodon.mamut.collaboration.ErrorDialog;
+import org.mastodon.mamut.collaboration.dialogs.ErrorDialog;
 import org.mastodon.mamut.collaboration.MastodonGitRepository;
 import org.scijava.Context;
 import org.scijava.command.Command;

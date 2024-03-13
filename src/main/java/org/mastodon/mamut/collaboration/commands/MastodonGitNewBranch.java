@@ -1,6 +1,6 @@
 package org.mastodon.mamut.collaboration.commands;
 
-import org.mastodon.mamut.collaboration.ErrorDialog;
+import org.mastodon.mamut.collaboration.dialogs.ErrorDialog;
 import org.mastodon.mamut.collaboration.MastodonGitRepository;
 import org.scijava.command.Command;
 import org.scijava.plugin.Parameter;

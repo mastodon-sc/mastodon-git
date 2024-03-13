@@ -1,4 +1,4 @@
-package org.mastodon.mamut.collaboration.commands;
+package org.mastodon.mamut.collaboration.dialogs;
 
 import java.util.concurrent.CancellationException;
 

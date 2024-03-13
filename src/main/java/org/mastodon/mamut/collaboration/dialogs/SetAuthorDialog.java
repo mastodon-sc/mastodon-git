@@ -1,7 +1,5 @@
 package org.mastodon.mamut.collaboration.dialogs;
 
-import java.util.concurrent.CancellationException;
-
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -9,10 +7,7 @@ import javax.swing.JTextField;
 
 import net.miginfocom.swing.MigLayout;
 
-import org.mastodon.mamut.collaboration.settings.DefaultMastodonGitSettingsService;
-import org.mastodon.mamut.collaboration.settings.MastodonGitSettingsService;
-import org.scijava.Context;
-import org.scijava.prefs.PrefService;
+import org.apache.commons.lang3.tuple.Pair;
 
 public class SetAuthorDialog
 {
@@ -21,13 +16,7 @@ public class SetAuthorDialog
 		// prevent from instantiation
 	}
 
-	/**
-	 * Shows a dialog that asks the user for an author name and email address.
-	 * Saves the name and email in the MastodonGitSettingsService.
-	 *
-	 * @throws CancellationException if the user presses cancel.
-	 */
-	public static void setAuthorName( MastodonGitSettingsService settings )
+	public static Pair< String, String > show()
 	{
 		final String description = "<html><body align=left>"
 				+ "The name and email that you specify below<br>"
@@ -46,17 +35,8 @@ public class SetAuthorDialog
 		panel.add( emailField, "grow, wrap" );
 		int result = JOptionPane.showOptionDialog( null, panel, "Set Author Name", JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE, null, new Object[] { "Set Name", "Cancel" }, null );
 		if ( result == 0 )
-		{
-			settings.setAuthorName( authorField.getText() );
-			settings.setAuthorEmail( emailField.getText() );
-		}
+			return Pair.of( authorField.getText(), emailField.getText() );
+		return null;
 	}
 
-	public static void main( String... args )
-	{
-		Context context = new Context();
-		PrefService settings = context.getService( PrefService.class );
-		settings.remove( DefaultMastodonGitSettingsService.class, "author.name" );
-		settings.remove( DefaultMastodonGitSettingsService.class, "author.email" );
-	}
 }

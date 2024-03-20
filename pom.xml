@@ -113,8 +113,8 @@
 		<license.organizationName>Mastodon authors</license.organizationName>
 		<license.copyrightOwners>Matthias Arzt</license.copyrightOwners>
 
-		<mastodon.version>1.0.0-beta-28</mastodon.version>
-		<mastodon-tomancak.version>0.4.1</mastodon-tomancak.version>
+		<mastodon.version>1.0.0-beta-29</mastodon.version>
+		<mastodon-tomancak.version>0.4.2</mastodon-tomancak.version>
 
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
 		<releaseProfiles>sign,deploy-to-scijava</releaseProfiles>

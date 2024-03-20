@@ -345,9 +345,9 @@ public class MastodonGitRepository
 		}
 	}
 
-	private void mergeAndCommit( Context context, MamutProject project, Dataset dsA, Dataset dsB, String commitMessage ) throws Exception
+	private void mergeAndCommit( Context context, MamutProject project, Dataset datasetA, Dataset datasetB, String commitMessage ) throws Exception
 	{
-		Model mergedModel = merge( dsA, dsB );
+		Model mergedModel = merge( datasetA, datasetB );
 		if ( ConflictUtils.hasConflict( mergedModel ) )
 			throw new GraphMergeConflictException();
 		ConflictUtils.removeMergeConflictTagSets( mergedModel );

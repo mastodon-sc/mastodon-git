@@ -245,7 +245,7 @@ public class MastodonGitRepository
 			else
 				git.checkout().setName( branchName ).call();
 		}
-		reloadFromDisc();
+		reloadFromDisk();
 	}
 
 	private synchronized String getSimpleName( String branchName )
@@ -293,7 +293,7 @@ public class MastodonGitRepository
 			git.checkout().setName( currentBranch ).call();
 			git.merge().setCommit( false ).include( git.getRepository().exactRef( selectedBranch ) ).call(); // TODO selected branch, should not be a string but a ref instead
 			mergeAndCommit( context, project, dsA, dsB, "Merge commit generated with Mastodon" );
-			reloadFromDisc();
+			reloadFromDisk();
 		}
 	}
 
@@ -319,7 +319,7 @@ public class MastodonGitRepository
 			{
 				abortMerge( git );
 			}
-			reloadFromDisc();
+			reloadFromDisk();
 		}
 	}
 
@@ -376,7 +376,7 @@ public class MastodonGitRepository
 		return output.getModel();
 	}
 
-	private synchronized void reloadFromDisc() throws IOException
+	private synchronized void reloadFromDisk() throws IOException
 	{
 		ReloadFromDiskUtils.reloadFromDisk( projectModel );
 	}
@@ -386,7 +386,7 @@ public class MastodonGitRepository
 		try (Git git = initGit())
 		{
 			git.reset().setMode( ResetCommand.ResetType.HARD ).call();
-			reloadFromDisc();
+			reloadFromDisk();
 		}
 	}
 
@@ -439,7 +439,7 @@ public class MastodonGitRepository
 			Repository repository = git.getRepository();
 			String remoteTrackingBranch = new BranchConfig( repository.getConfig(), repository.getBranch() ).getRemoteTrackingBranch();
 			git.reset().setMode( ResetCommand.ResetType.HARD ).setRef( remoteTrackingBranch ).call();
-			reloadFromDisc();
+			reloadFromDisk();
 		}
 	}
 

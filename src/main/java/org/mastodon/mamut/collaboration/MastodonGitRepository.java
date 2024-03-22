@@ -223,9 +223,7 @@ public class MastodonGitRepository
 	{
 		StoredConfig config = git.getRepository().getConfig();
 		String merge = config.getString( ConfigConstants.CONFIG_BRANCH_SECTION, branchName, "merge" );
-		if ( merge != null )
-			return true;
-		return false;
+		return merge != null;
 	}
 
 	private static void raiseExceptionOnUnsuccessfulPush( Iterable< PushResult > results )

@@ -22,12 +22,49 @@ import org.mastodon.model.tag.TagSetStructure;
  */
 public class ModelAsserts
 {
+	/**
+	 * Compares two {@link Model}s. Throws an {@link AssertionError} if they are
+	 * different.
+	 * <br>
+	 * The following properties are compared:
+	 * <ul>
+	 *    <li>Graph structure</li>
+	 *    <li>Spot labels and timepoints</li>
+	 *    <li>Spot positions and covariances</li>
+	 *    <li>Order of outgoing edges</li>
+	 *    <li>Spot and link tags</li>
+	 *    <li>Order of tagsets and tags, tag colors</li>
+	 * </ul>
+	 * The following properties are ignored:
+	 * <ul>
+	 *     <li>{@link Spot#getInternalPoolIndex()}</li>
+	 *     <li>Order of incoming edges is ignored</li>
+	 *     <li>The entire {@link org.mastodon.feature.FeatureModel}</li>
+	 * </ul>
+	 */
 	public static void assertModelEquals( Model a, Model b )
 	{
 		assertGraphEquals( a.getGraph(), b.getGraph() );
 		assertTagSetModelEquals( a, b );
 	}
 
+	/**
+	 * Compares two {@link ModelGraph}s. Throws an {@link AssertionError} if they
+	 * are different.
+	 * <br>
+	 * The following properties are compared:
+	 * <ul>
+	 *    <li>Graph structure</li>
+	 *    <li>Spot labels and timepoints</li>
+	 *    <li>Spot positions and covariances</li>
+	 *    <li>Order of outgoing edges</li>
+	 * </ul>
+	 * The following properties are ignored:
+	 * <ul>
+	 *     <li>{@link Spot#getInternalPoolIndex()}</li>
+	 *     <li>Order of incoming edges is ignored</li>
+	 * </ul>
+	 */
 	public static void assertGraphEquals( ModelGraph a, ModelGraph b )
 	{
 		assertEquals( spotsAsString( a ), spotsAsString( b ) );
@@ -65,7 +102,7 @@ public class ModelAsserts
 		return String.join( "\n", strings );
 	}
 
-	static String spotToString( Spot spot )
+	private static String spotToString( Spot spot )
 	{
 		String label = spot.getLabel();
 		if ( label.equals( Integer.toString( spot.getInternalPoolIndex() ) ) )
@@ -85,6 +122,7 @@ public class ModelAsserts
 		return sb.toString();
 	}
 
+	// Package private to allow testing.
 	static String tagSetModelAsString( Model model )
 	{
 		StringBuilder sb = new StringBuilder();

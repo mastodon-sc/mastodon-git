@@ -13,6 +13,10 @@ public interface MastodonGitSettingsService extends ImageJService
 	 */
 	void askForAuthorName();
 
+	void setAuthorName( String name );
+
+	void setAuthorEmail( String email );
+
 	/**
 	 * Return true if the author is specified. Ask the user for the author
 	 * name and email if they are not specified. Return false if the user does not

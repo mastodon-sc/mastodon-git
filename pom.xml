@@ -38,6 +38,11 @@
 			<artifactId>mastodon-tomancak</artifactId>
 			<version>${mastodon-tomancak.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>org.mastodon</groupId>
+			<artifactId>mastodon-collection</artifactId>
+			<version>1.0.0-beta-26-SNAPSHOT</version>
+		</dependency>
 
 		<dependency>
 			<groupId>org.eclipse.jgit</groupId>
@@ -108,8 +113,8 @@
 		<license.organizationName>Mastodon authors</license.organizationName>
 		<license.copyrightOwners>Matthias Arzt</license.copyrightOwners>
 
-		<mastodon.version>1.0.0-beta-26</mastodon.version>
-		<mastodon-tomancak.version>0.3.0</mastodon-tomancak.version>
+		<mastodon.version>1.0.0-beta-29</mastodon.version>
+		<mastodon-tomancak.version>0.4.2</mastodon-tomancak.version>
 
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
 		<releaseProfiles>sign,deploy-to-scijava</releaseProfiles>

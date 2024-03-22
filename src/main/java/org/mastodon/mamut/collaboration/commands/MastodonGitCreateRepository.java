@@ -45,9 +45,12 @@ public class MastodonGitCreateRepository extends AbstractCancellable implements 
 	private final String text = "<html><body>"
 			+ "<h1>Share Project</h1>"
 			+ "<p>Share the current project on github or gitlab.</p>"
-			+ "<p>Go to github.com or to ure institute's gitlab and create a new repository.</p>"
+			+ "<p>Go to github.com or to your institute's gitlab and create a new repository.</p>"
 			+ "<p>Then copy the URL of the repository and paste it below.</p>"
-			+ "<p>A copy of will be created in the directory you specify, and then uploaded to the specified URL.</p>";
+			+ "<p>(GitLab by default protects the main branch. You might want to unprotect it.)</p>"
+			+ "<p>A copy of the shared project will be saved in the directory that you specify below.</p>"
+			+ "<p>This directory is used by Mastodon-Git as local repository, all changes are saved there</p>"
+			+ "<p>before they are uploaded to the specified URL.</p>";
 
 	@Parameter
 	private Callback callback;

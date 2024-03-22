@@ -36,10 +36,8 @@ import java.util.Map;
 import net.imglib2.util.Cast;
 
 import org.mastodon.app.ui.ViewMenuBuilder;
-import org.mastodon.mamut.MamutAppModel;
-import org.mastodon.mamut.WindowManager;
+import org.mastodon.mamut.ProjectModel;
 import org.mastodon.mamut.plugin.MamutPlugin;
-import org.mastodon.mamut.plugin.MamutPluginAppModel;
 import org.mastodon.mamut.collaboration.MastodonGitController;
 import org.scijava.ui.behaviour.util.AbstractNamedAction;
 import org.scijava.ui.behaviour.util.Actions;
@@ -61,9 +59,7 @@ public abstract class BasicMamutPlugin implements MamutPlugin
 
 	private final List< ViewMenuBuilder.MenuItem > menuItems = new ArrayList<>();
 
-	private MamutAppModel appModel;
-
-	private WindowManager windowManager;
+	private ProjectModel projectModel;
 
 	protected < T > BasicMamutPlugin( ActionDescriptions< T > description )
 	{
@@ -100,11 +96,10 @@ public abstract class BasicMamutPlugin implements MamutPlugin
 	}
 
 	@Override
-	public void setAppPluginModel( MamutPluginAppModel appPluginModel )
+	public void setAppPluginModel( ProjectModel projectModel )
 	{
-		appModel = appPluginModel.getAppModel();
-		windowManager = appPluginModel.getWindowManager();
-		actions.forEach( ( key, action ) -> action.setEnabled( appModel != null ) );
+		this.projectModel = projectModel;
+		actions.forEach( ( key, action ) -> action.setEnabled( this.projectModel != null ) );
 		initialize();
 	}
 
@@ -129,13 +124,8 @@ public abstract class BasicMamutPlugin implements MamutPlugin
 			pluginActions.namedAction( actions.get( entry.key ), entry.shortCuts );
 	}
 
-	protected MamutAppModel getAppModel()
+	protected ProjectModel getProjectModel()
 	{
-		return appModel;
-	}
-
-	protected WindowManager getWindowManager()
-	{
-		return windowManager;
+		return projectModel;
 	}
 }

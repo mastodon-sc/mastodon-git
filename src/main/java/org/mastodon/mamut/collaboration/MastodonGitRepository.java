@@ -44,30 +44,33 @@ import org.eclipse.jgit.api.ListBranchCommand;
 import org.eclipse.jgit.api.ResetCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.BranchConfig;
+import org.eclipse.jgit.lib.ConfigConstants;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.lib.StoredConfig;
 import org.eclipse.jgit.transport.PushResult;
 import org.eclipse.jgit.transport.RemoteRefUpdate;
 import org.mastodon.graph.io.RawGraphIO;
 import org.mastodon.mamut.MainWindow;
-import org.mastodon.mamut.WindowManager;
+import org.mastodon.mamut.ProjectModel;
 import org.mastodon.mamut.collaboration.exceptions.MastodonGitException;
 import org.mastodon.mamut.collaboration.settings.MastodonGitSettingsService;
 import org.mastodon.mamut.collaboration.utils.ConflictUtils;
+import org.mastodon.mamut.collaboration.utils.ReloadFromDiskUtils;
 import org.mastodon.mamut.feature.MamutRawFeatureModelIO;
+import org.mastodon.mamut.io.ProjectLoader;
+import org.mastodon.mamut.io.ProjectSaver;
+import org.mastodon.mamut.io.project.MamutProject;
+import org.mastodon.mamut.io.project.MamutProjectIO;
 import org.mastodon.mamut.model.Link;
 import org.mastodon.mamut.model.Model;
 import org.mastodon.mamut.model.Spot;
-import org.mastodon.mamut.project.MamutProject;
-import org.mastodon.mamut.project.MamutProjectIO;
 import org.mastodon.mamut.collaboration.credentials.PersistentCredentials;
 import org.mastodon.mamut.collaboration.exceptions.GraphMergeConflictException;
 import org.mastodon.mamut.collaboration.exceptions.GraphMergeException;
 import org.mastodon.mamut.tomancak.merging.Dataset;
 import org.mastodon.mamut.tomancak.merging.MergeDatasets;
 import org.scijava.Context;
-
-import mpicbg.spim.data.SpimDataException;
 
 // make it one synchronized class per repository
 // don't allow to open a repository twice (maybe read only)
@@ -76,25 +79,32 @@ public class MastodonGitRepository
 
 	private static final PersistentCredentials credentials = new PersistentCredentials();
 
-	private final WindowManager windowManager;
+	private final ProjectModel projectModel;
 
 	private final MastodonGitSettingsService settingsService;
 
-	public MastodonGitRepository( WindowManager windowManager )
+	public MastodonGitRepository( ProjectModel projectModel )
 	{
-		this.windowManager = windowManager;
-		settingsService = windowManager.getContext().service( MastodonGitSettingsService.class );
+		this.projectModel = projectModel;
+		settingsService = projectModel.getContext().service( MastodonGitSettingsService.class );
 	}
 
+	/**
+	 * This method uploads the given Mastodon project to a remote git repository.
+	 * <br>
+	 * It does so by cloning an (empty) repository from the given URL into the
+	 * given directory, and saving the Mastodon project into a subdirectory,
+	 * comitting and pushing the changes.
+	 */
 	public static MastodonGitRepository shareProject(
-			WindowManager windowManager,
+			ProjectModel projectModel,
 			File directory,
 			String repositoryURL )
 			throws Exception
 	{
 		if ( !directory.isDirectory() )
 			throw new IllegalArgumentException( "Not a directory: " + directory );
-		if ( !isEmpty( directory ) )
+		if ( !isDirectoryEmpty( directory ) )
 			throw new IllegalArgumentException( "Directory not empty: " + directory );
 		Git git = Git.cloneRepository()
 				.setURI( repositoryURL )
@@ -105,7 +115,7 @@ public class MastodonGitRepository
 		if ( Files.exists( mastodonProjectPath ) )
 			throw new MastodonGitException( "The repository already contains a shared mastodon project: " + repositoryURL );
 		Files.createDirectory( mastodonProjectPath );
-		windowManager.getProjectManager().saveProject( mastodonProjectPath.toFile() );
+		ProjectSaver.saveProject( mastodonProjectPath.toFile(), projectModel );
 		Files.copy( mastodonProjectPath.resolve( "gui.xml" ), mastodonProjectPath.resolve( "gui.xml_remote" ) );
 		Files.copy( mastodonProjectPath.resolve( "project.xml" ), mastodonProjectPath.resolve( "project.xml_remote" ) );
 		Files.copy( mastodonProjectPath.resolve( "dataset.xml.backup" ), mastodonProjectPath.resolve( "dataset.xml.backup_remote" ) );
@@ -119,18 +129,25 @@ public class MastodonGitRepository
 		git.commit().setMessage( "Share mastodon project" ).call();
 		git.push().setCredentialsProvider( credentials.getSingleUseCredentialsProvider() ).setRemote( "origin" ).call();
 		git.close();
-		return new MastodonGitRepository( windowManager );
+		return new MastodonGitRepository( projectModel );
 	}
 
-	private static boolean isEmpty( File directory )
+	private static boolean isDirectoryEmpty( File directory )
 	{
 		String[] containedFiles = directory.list();
 		return containedFiles == null || containedFiles.length == 0;
 	}
 
+	/**
+	 * This method clones a shared Mastodon project from a remote git repository.
+	 * <br>
+	 * It does so by cloning the repository into the given directory, and opening
+	 * the project in Mastodon. Note that the  files gui.xml, project.xml and
+	 * dataset.xml.backup are treated specially.
+	 */
 	public static void cloneRepository( String repositoryURL, File directory ) throws Exception
 	{
-		try (Git git = Git.cloneRepository()
+		try (Git ignored = Git.cloneRepository()
 				.setURI( repositoryURL )
 				.setCredentialsProvider( credentials.getSingleUseCredentialsProvider() )
 				.setDirectory( directory )
@@ -143,20 +160,21 @@ public class MastodonGitRepository
 		}
 	}
 
+	/**
+	 * Simply starts a new Mastodon window with the project in the given repository.
+	 */
 	public static void openProjectInRepository( Context context, File directory ) throws Exception
 	{
-		WindowManager windowManager = new WindowManager( context );
-		Path path = directory.toPath().resolve( "mastodon.project" );
-		windowManager.getProjectManager().open( new MamutProjectIO().load( path.toAbsolutePath().toString() ) );
-		new MainWindow( windowManager ).setVisible( true );
+		String mastodonFile = directory.toPath().resolve( "mastodon.project" ).toString();
+		boolean restoreGUIState = true;
+		boolean authorizeSubstituteDummyData = true;
+		ProjectModel newProject = ProjectLoader.open( mastodonFile, context, restoreGUIState, authorizeSubstituteDummyData );
+		new MainWindow( newProject ).setVisible( true );
 	}
 
-	public synchronized void commit( String message ) throws Exception
-	{
-		windowManager.getProjectManager().saveProject();
-		commitWithoutSave( message );
-	}
-
+	/**
+	 * Commits last saved changes to the git repository.
+	 */
 	public void commitWithoutSave( String message ) throws Exception
 	{
 		try (Git git = initGit())
@@ -169,13 +187,43 @@ public class MastodonGitRepository
 		}
 	}
 
+	/**
+	 * This method performs an operation similar to {@code "git push origin --set-upstream <current-branch>"}.
+	 *
+	 * @throws MastodonGitException if the push fails because the remote server has changes that the local
+	 * repository does not have. Or if the push fails for any other reason.
+	 */
 	public synchronized void push() throws Exception
 	{
 		try (Git git = initGit())
 		{
 			Iterable< PushResult > results = git.push().setCredentialsProvider( credentials.getSingleUseCredentialsProvider() ).setRemote( "origin" ).call();
 			raiseExceptionOnUnsuccessfulPush( results );
+			String branchName = getSimpleName( getCurrentBranch() );
+			if ( !upstreamIsConfigured( git, branchName ) )
+				setUpstream( git, branchName );
 		}
+	}
+
+	/**
+	 * Sets the upstream for the given branch to "origin".
+	 */
+	private static void setUpstream( Git git, String branchName ) throws IOException
+	{
+		StoredConfig config = git.getRepository().getConfig();
+		config.setString( ConfigConstants.CONFIG_BRANCH_SECTION, branchName, "remote", "origin" );
+		config.setString( ConfigConstants.CONFIG_BRANCH_SECTION, branchName, "merge", "refs/heads/" + branchName );
+		config.save();
+	}
+
+	/**
+	 * Checks if the upstream is configured for the given branch.
+	 */
+	private static boolean upstreamIsConfigured( Git git, String branchName )
+	{
+		StoredConfig config = git.getRepository().getConfig();
+		String merge = config.getString( ConfigConstants.CONFIG_BRANCH_SECTION, branchName, "merge" );
+		return merge != null;
 	}
 
 	private static void raiseExceptionOnUnsuccessfulPush( Iterable< PushResult > results )
@@ -195,6 +243,10 @@ public class MastodonGitRepository
 		}
 	}
 
+	/**
+	 * Create a new git branch with the given name.
+	 * Similar to {@code "git checkout -b <branchName>"}.
+	 */
 	public synchronized void createNewBranch( String branchName ) throws Exception
 	{
 		try (Git git = initGit())
@@ -203,9 +255,20 @@ public class MastodonGitRepository
 		}
 	}
 
+	/**
+	 * Switches to the given branch.
+	 * <br>
+	 * Three steps:
+	 * <ol>
+	 *     <li>Saves, an checks if there are no uncommited changes. (clean)</li>
+	 *     <li>Switches to the given branch.</li>
+	 *     <li>Reloads the project from disk.</li>
+	 * </ol>
+	 */
 	public synchronized void switchBranch( String branchName ) throws Exception
 	{
-		File projectRoot = windowManager.getProjectManager().getProject().getProjectRoot();
+		MamutProject project = projectModel.getProject();
+		File projectRoot = project.getProjectRoot();
 		try (Git git = initGit( projectRoot ))
 		{
 			ensureClean( git, "switching the branch" );
@@ -226,7 +289,7 @@ public class MastodonGitRepository
 			else
 				git.checkout().setName( branchName ).call();
 		}
-		windowManager.getProjectManager().open( new MamutProjectIO().load( projectRoot.getAbsolutePath() ) );
+		reloadFromDisk();
 	}
 
 	private synchronized String getSimpleName( String branchName )
@@ -235,6 +298,9 @@ public class MastodonGitRepository
 		return parts[ parts.length - 1 ];
 	}
 
+	/**
+	 * Returns a list of all branches local and remote branches in the git repository.
+	 */
 	public synchronized List< String > getBranches() throws Exception
 	{
 		try (Git git = initGit())
@@ -243,6 +309,9 @@ public class MastodonGitRepository
 		}
 	}
 
+	/**
+	 * Fetches all branches from the remote repository.
+	 */
 	public synchronized void fetchAll() throws Exception
 	{
 		try (Git git = initGit())
@@ -251,6 +320,9 @@ public class MastodonGitRepository
 		}
 	}
 
+	/**
+	 * Returns the name of the current branch.
+	 */
 	public synchronized String getCurrentBranch() throws Exception
 	{
 		try (Git git = initGit())
@@ -259,10 +331,14 @@ public class MastodonGitRepository
 		}
 	}
 
+	/**
+	 * Merges the given branch into the current branch. Throws an exception if there are conflicts.
+	 * Otherwise, creates a merge comit with the message "Merge commit generated with Mastodon".
+	 */
 	public synchronized void mergeBranch( String selectedBranch ) throws Exception
 	{
-		Context context = windowManager.getContext();
-		MamutProject project = windowManager.getProjectManager().getProject();
+		Context context = projectModel.getContext();
+		MamutProject project = projectModel.getProject();
 		File projectRoot = project.getProjectRoot();
 		try (Git git = initGit())
 		{
@@ -273,17 +349,20 @@ public class MastodonGitRepository
 			Dataset dsB = new Dataset( projectRoot.getAbsolutePath() );
 			git.checkout().setName( currentBranch ).call();
 			git.merge().setCommit( false ).include( git.getRepository().exactRef( selectedBranch ) ).call(); // TODO selected branch, should not be a string but a ref instead
-			Model mergedModel = merge( dsA, dsB );
-			saveModel( context, mergedModel, project );
-			commitWithoutSave( "Merge commit generated with Mastodon" );
-			reloadFromDisc();
+			mergeAndCommit( context, project, dsA, dsB, "Merge commit generated with Mastodon" );
+			reloadFromDisk();
 		}
 	}
 
+	/**
+	 * Pulls changes from the remote repository.
+	 * <br>
+	 * If there are conflicts, it tries to resolve them automatically by creating a merge commit.
+	 */
 	public synchronized void pull() throws Exception
 	{
-		Context context = windowManager.getContext();
-		MamutProject project = windowManager.getProjectManager().getProject();
+		Context context = projectModel.getContext();
+		MamutProject project = projectModel.getProject();
 		File projectRoot = project.getProjectRoot();
 		try (Git git = initGit())
 		{
@@ -302,11 +381,11 @@ public class MastodonGitRepository
 			{
 				abortMerge( git );
 			}
-			reloadFromDisc();
+			reloadFromDisk();
 		}
 	}
 
-	private void automaticMerge( Context context, MamutProject project, File projectRoot, Git git ) throws Exception
+	private void automaticMerge( Context context, MamutProject project, File projectRoot, Git git )
 	{
 		try
 		{
@@ -315,12 +394,8 @@ public class MastodonGitRepository
 			git.checkout().setAllPaths( true ).setStage( CheckoutCommand.Stage.THEIRS ).call();
 			Dataset dsB = new Dataset( projectRoot.getAbsolutePath() );
 			git.checkout().setAllPaths( true ).setStage( CheckoutCommand.Stage.OURS ).call();
-			Model mergedModel = merge( dsA, dsB );
-			if ( ConflictUtils.hasConflict( mergedModel ) )
-				throw new GraphMergeConflictException();
-			ConflictUtils.removeMergeConflictTagSets( mergedModel );
-			saveModel( context, mergedModel, project );
-			commitWithoutSave( "Automatic merge by Mastodon during pull" );
+			String commitMessage = "Automatic merge by Mastodon during pull";
+			mergeAndCommit( context, project, dsA, dsB, commitMessage );
 		}
 		catch ( GraphMergeException e )
 		{
@@ -332,12 +407,22 @@ public class MastodonGitRepository
 		}
 	}
 
+	private void mergeAndCommit( Context context, MamutProject project, Dataset datasetA, Dataset datasetB, String commitMessage ) throws Exception
+	{
+		Model mergedModel = merge( datasetA, datasetB );
+		if ( ConflictUtils.hasConflict( mergedModel ) )
+			throw new GraphMergeConflictException();
+		ConflictUtils.removeMergeConflictTagSets( mergedModel );
+		saveModel( context, mergedModel, project );
+		commitWithoutSave( commitMessage );
+	}
+
 	private static void saveModel( Context context, Model model, MamutProject project ) throws IOException
 	{
 		project.setProjectRoot( project.getProjectRoot() );
 		try (final MamutProject.ProjectWriter writer = project.openForWriting())
 		{
-			new MamutProjectIO().save( project, writer );
+			MamutProjectIO.save( project, writer );
 			final RawGraphIO.GraphToFileIdMap< Spot, Link > idmap = model.saveRaw( writer );
 			MamutRawFeatureModelIO.serialize( context, model, idmap, writer );
 		}
@@ -345,7 +430,7 @@ public class MastodonGitRepository
 
 	private static Model merge( Dataset dsA, Dataset dsB )
 	{
-		final MergeDatasets.OutputDataSet output = new MergeDatasets.OutputDataSet();
+		final MergeDatasets.OutputDataSet output = new MergeDatasets.OutputDataSet( new Model() );
 		double distCutoff = 1000;
 		double mahalanobisDistCutoff = 1;
 		double ratioThreshold = 2;
@@ -353,24 +438,26 @@ public class MastodonGitRepository
 		return output.getModel();
 	}
 
-	private synchronized void reloadFromDisc() throws IOException, SpimDataException
+	private synchronized void reloadFromDisk() throws IOException
 	{
-		MamutProject project = windowManager.getProjectManager().getProject();
-		windowManager.getProjectManager().open( project );
+		ReloadFromDiskUtils.reloadFromDisk( projectModel );
 	}
 
+	/**
+	 * Resets the current branch to the last commit. And reloads the project from disk.
+	 */
 	public synchronized void reset() throws Exception
 	{
 		try (Git git = initGit())
 		{
 			git.reset().setMode( ResetCommand.ResetType.HARD ).call();
-			reloadFromDisc();
+			reloadFromDisk();
 		}
 	}
 
 	private synchronized Git initGit() throws IOException
 	{
-		File projectRoot = windowManager.getProjectManager().getProject().getProjectRoot();
+		File projectRoot = projectModel.getProject().getProjectRoot();
 		return initGit( projectRoot );
 	}
 
@@ -410,6 +497,9 @@ public class MastodonGitRepository
 		git.reset().setMode( ResetCommand.ResetType.HARD ).call();
 	}
 
+	/**
+	 * Hard reset of the current branch to the remote branch.
+	 */
 	public void resetToRemoteBranch() throws Exception
 	{
 		try (Git git = initGit())
@@ -417,21 +507,25 @@ public class MastodonGitRepository
 			Repository repository = git.getRepository();
 			String remoteTrackingBranch = new BranchConfig( repository.getConfig(), repository.getBranch() ).getRemoteTrackingBranch();
 			git.reset().setMode( ResetCommand.ResetType.HARD ).setRef( remoteTrackingBranch ).call();
-			reloadFromDisc();
+			reloadFromDisk();
 		}
 	}
 
 	private void ensureClean( Git git, String title ) throws GitAPIException
 	{
-		windowManager.getProjectManager().saveProject();
+		ProjectSaver.saveProject( projectModel, null );
 		boolean clean = isClean( git );
 		if ( !clean )
 			throw new MastodonGitException( "There are uncommitted changes. Please add a save point before " + title + "." );
 	}
 
+	/**
+	 * Returns true if the currently opened Mastodon project is the same as the last commit on the current branch.
+	 * Side effect: Saves the project.
+	 */
 	public boolean isClean() throws Exception
 	{
-		windowManager.getProjectManager().saveProject();
+		ProjectSaver.saveProject( projectModel, null );
 		try (Git git = initGit())
 		{
 			return isClean( git );

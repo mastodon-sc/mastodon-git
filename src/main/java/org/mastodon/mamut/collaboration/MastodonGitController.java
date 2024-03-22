@@ -36,6 +36,7 @@ import java.util.concurrent.CancellationException;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import org.mastodon.mamut.KeyConfigScopes;
 import org.mastodon.mamut.collaboration.commands.MastodonGitCloneRepository;
 import org.mastodon.mamut.collaboration.commands.MastodonGitCreateRepository;
 import org.mastodon.mamut.collaboration.commands.MastodonGitNewBranch;
@@ -47,11 +48,11 @@ import org.mastodon.mamut.collaboration.utils.BasicMamutPlugin;
 import org.mastodon.mamut.plugin.MamutPlugin;
 import org.mastodon.mamut.collaboration.exceptions.GraphMergeConflictException;
 import org.mastodon.mamut.collaboration.exceptions.GraphMergeException;
-import org.mastodon.ui.keymap.CommandDescriptionProvider;
 import org.mastodon.ui.keymap.KeyConfigContexts;
 import org.scijava.command.CommandService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
+import org.scijava.ui.behaviour.io.gui.CommandDescriptionProvider;
 
 @Plugin( type = MamutPlugin.class )
 public class MastodonGitController extends BasicMamutPlugin
@@ -157,7 +158,7 @@ public class MastodonGitController extends BasicMamutPlugin
 	protected void initialize()
 	{
 		super.initialize();
-		repository = new MastodonGitRepository( getWindowManager() );
+		repository = new MastodonGitRepository( getProjectModel() );
 		updateEnableCommands();
 	}
 
@@ -174,7 +175,7 @@ public class MastodonGitController extends BasicMamutPlugin
 			return;
 		}
 		MastodonGitCreateRepository.Callback callback = ( File directory, String url ) -> {
-			this.repository = MastodonGitRepository.shareProject( getWindowManager(), directory, url );
+			this.repository = MastodonGitRepository.shareProject( getProjectModel(), directory, url );
 			updateEnableCommands();
 		};
 		commandService.run( MastodonGitCreateRepository.class, true, "callback", callback );
@@ -401,7 +402,7 @@ public class MastodonGitController extends BasicMamutPlugin
 	{
 		public DescriptionProvider()
 		{
-			super( actionDescriptions, KeyConfigContexts.MASTODON, KeyConfigContexts.TRACKSCHEME );
+			super( actionDescriptions, KeyConfigScopes.MAMUT, KeyConfigContexts.MASTODON, KeyConfigContexts.TRACKSCHEME );
 		}
 	}
 }

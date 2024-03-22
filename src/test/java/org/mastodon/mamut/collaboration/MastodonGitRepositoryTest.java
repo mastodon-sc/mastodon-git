@@ -11,8 +11,10 @@ import java.util.HashSet;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mastodon.mamut.ProjectModel;
+import org.mastodon.mamut.collaboration.settings.MastodonGitSettingsService;
 import org.mastodon.mamut.collaboration.utils.ModelAsserts;
 import org.mastodon.mamut.collaboration.utils.ModelIO;
 import org.mastodon.mamut.io.ProjectLoader;
@@ -29,6 +31,16 @@ import org.scijava.Context;
  */
 public class MastodonGitRepositoryTest
 {
+	@BeforeClass
+	public static void init()
+	{
+		try (Context context = new Context())
+		{
+			MastodonGitSettingsService settings = context.getService( MastodonGitSettingsService.class );
+			settings.setAuthorName( "Mastodon Git Test" );
+			settings.setAuthorEmail( "noreply@example.com" );
+		}
+	}
 
 	@Test
 	public void testShareAndCloneProject() throws Exception

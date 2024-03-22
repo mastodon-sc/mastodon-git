@@ -10,7 +10,6 @@ import org.junit.Test;
 import org.mastodon.mamut.ProjectModel;
 import org.mastodon.mamut.collaboration.TestResources;
 import org.mastodon.mamut.io.ProjectLoader;
-import org.mastodon.mamut.io.project.MamutProjectIO;
 import org.mastodon.mamut.model.Model;
 import org.scijava.Context;
 

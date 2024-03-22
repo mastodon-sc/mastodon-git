@@ -89,6 +89,13 @@ public class MastodonGitRepository
 		settingsService = projectModel.getContext().service( MastodonGitSettingsService.class );
 	}
 
+	/**
+	 * This method uploads the given Mastodon project to a remote git repository.
+	 * <br>
+	 * It does so by cloning an (empty) repository from the given URL into the
+	 * given directory, and saving the Mastodon project into a subdirectory,
+	 * comitting and pushing the changes.
+	 */
 	public static MastodonGitRepository shareProject(
 			ProjectModel projectModel,
 			File directory,
@@ -97,7 +104,7 @@ public class MastodonGitRepository
 	{
 		if ( !directory.isDirectory() )
 			throw new IllegalArgumentException( "Not a directory: " + directory );
-		if ( !isEmpty( directory ) )
+		if ( !isDirectoryEmpty( directory ) )
 			throw new IllegalArgumentException( "Directory not empty: " + directory );
 		Git git = Git.cloneRepository()
 				.setURI( repositoryURL )
@@ -125,12 +132,19 @@ public class MastodonGitRepository
 		return new MastodonGitRepository( projectModel );
 	}
 
-	private static boolean isEmpty( File directory )
+	private static boolean isDirectoryEmpty( File directory )
 	{
 		String[] containedFiles = directory.list();
 		return containedFiles == null || containedFiles.length == 0;
 	}
 
+	/**
+	 * This method clones a shared Mastodon project from a remote git repository.
+	 * <br>
+	 * It does so by cloning the repository into the given directory, and opening
+	 * the project in Mastodon. Note that the  files gui.xml, project.xml and
+	 * dataset.xml.backup are treated specially.
+	 */
 	public static void cloneRepository( String repositoryURL, File directory ) throws Exception
 	{
 		try (Git ignored = Git.cloneRepository()
@@ -146,6 +160,9 @@ public class MastodonGitRepository
 		}
 	}
 
+	/**
+	 * Simply starts a new Mastodon window with the project in the given repository.
+	 */
 	public static void openProjectInRepository( Context context, File directory ) throws Exception
 	{
 		String mastodonFile = directory.toPath().resolve( "mastodon.project" ).toString();
@@ -155,6 +172,9 @@ public class MastodonGitRepository
 		new MainWindow( newProject ).setVisible( true );
 	}
 
+	/**
+	 * Commits last saved changes to the git repository.
+	 */
 	public void commitWithoutSave( String message ) throws Exception
 	{
 		try (Git git = initGit())
@@ -167,6 +187,12 @@ public class MastodonGitRepository
 		}
 	}
 
+	/**
+	 * This method performs an operation similar to {@code "git push origin --set-upstream <current-branch>"}.
+	 *
+	 * @throws MastodonGitException if the push fails because the remote server has changes that the local
+	 * repository does not have. Or if the push fails for any other reason.
+	 */
 	public synchronized void push() throws Exception
 	{
 		try (Git git = initGit())
@@ -179,6 +205,9 @@ public class MastodonGitRepository
 		}
 	}
 
+	/**
+	 * Sets the upstream for the given branch to "origin".
+	 */
 	private static void setUpstream( Git git, String branchName ) throws IOException
 	{
 		StoredConfig config = git.getRepository().getConfig();
@@ -187,6 +216,9 @@ public class MastodonGitRepository
 		config.save();
 	}
 
+	/**
+	 * Checks if the upstream is configured for the given branch.
+	 */
 	private static boolean upstreamIsConfigured( Git git, String branchName )
 	{
 		StoredConfig config = git.getRepository().getConfig();
@@ -213,6 +245,10 @@ public class MastodonGitRepository
 		}
 	}
 
+	/**
+	 * Create a new git branch with the given name.
+	 * Similar to {@code "git checkout -b <branchName>"}.
+	 */
 	public synchronized void createNewBranch( String branchName ) throws Exception
 	{
 		try (Git git = initGit())
@@ -221,6 +257,16 @@ public class MastodonGitRepository
 		}
 	}
 
+	/**
+	 * Switches to the given branch.
+	 * <br>
+	 * Three steps:
+	 * <ol>
+	 *     <li>Saves, an checks if there are no uncommited changes. (clean)</li>
+	 *     <li>Switches to the given branch.</li>
+	 *     <li>Reloads the project from disk.</li>
+	 * </ol>
+	 */
 	public synchronized void switchBranch( String branchName ) throws Exception
 	{
 		MamutProject project = projectModel.getProject();
@@ -254,6 +300,9 @@ public class MastodonGitRepository
 		return parts[ parts.length - 1 ];
 	}
 
+	/**
+	 * Returns a list of all branches local and remote branches in the git repository.
+	 */
 	public synchronized List< String > getBranches() throws Exception
 	{
 		try (Git git = initGit())
@@ -262,6 +311,9 @@ public class MastodonGitRepository
 		}
 	}
 
+	/**
+	 * Fetches all branches from the remote repository.
+	 */
 	public synchronized void fetchAll() throws Exception
 	{
 		try (Git git = initGit())
@@ -270,6 +322,9 @@ public class MastodonGitRepository
 		}
 	}
 
+	/**
+	 * Returns the name of the current branch.
+	 */
 	public synchronized String getCurrentBranch() throws Exception
 	{
 		try (Git git = initGit())
@@ -278,6 +333,10 @@ public class MastodonGitRepository
 		}
 	}
 
+	/**
+	 * Merges the given branch into the current branch. Throws an exception if there are conflicts.
+	 * Otherwise, creates a merge comit with the message "Merge commit generated with Mastodon".
+	 */
 	public synchronized void mergeBranch( String selectedBranch ) throws Exception
 	{
 		Context context = projectModel.getContext();
@@ -297,6 +356,11 @@ public class MastodonGitRepository
 		}
 	}
 
+	/**
+	 * Pulls changes from the remote repository.
+	 * <br>
+	 * If there are conflicts, it tries to resolve them automatically by creating a merge commit.
+	 */
 	public synchronized void pull() throws Exception
 	{
 		Context context = projectModel.getContext();
@@ -381,6 +445,9 @@ public class MastodonGitRepository
 		ReloadFromDiskUtils.reloadFromDisk( projectModel );
 	}
 
+	/**
+	 * Resets the current branch to the last commit. And reloads the project from disk.
+	 */
 	public synchronized void reset() throws Exception
 	{
 		try (Git git = initGit())
@@ -432,6 +499,9 @@ public class MastodonGitRepository
 		git.reset().setMode( ResetCommand.ResetType.HARD ).call();
 	}
 
+	/**
+	 * Hard reset of the current branch to the remote branch.
+	 */
 	public void resetToRemoteBranch() throws Exception
 	{
 		try (Git git = initGit())
@@ -451,6 +521,10 @@ public class MastodonGitRepository
 			throw new MastodonGitException( "There are uncommitted changes. Please add a save point before " + title + "." );
 	}
 
+	/**
+	 * Returns true if the currently opened Mastodon project is the same as the last commit on the current branch.
+	 * Side effect: Saves the project.
+	 */
 	public boolean isClean() throws Exception
 	{
 		ProjectSaver.saveProject( projectModel, null );

@@ -68,13 +68,15 @@ public class DefaultMastodonGitSettingsService extends AbstractService implement
 		setAuthorEmail( result.getRight() );
 	}
 
-	private void setAuthorName( String name )
+	@Override
+	public void setAuthorName( String name )
 	{
 		this.authorName = name;
 		prefService.put( DefaultMastodonGitSettingsService.class, "author.name", name );
 	}
 
-	private void setAuthorEmail( String email )
+	@Override
+	public void setAuthorEmail( String email )
 	{
 		this.authorEmail = email;
 		prefService.put( DefaultMastodonGitSettingsService.class, "author.email", email );

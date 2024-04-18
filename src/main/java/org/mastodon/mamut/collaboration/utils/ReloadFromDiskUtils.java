@@ -3,6 +3,7 @@ package org.mastodon.mamut.collaboration.utils;
 import java.io.IOException;
 
 import org.mastodon.mamut.ProjectModel;
+import org.mastodon.mamut.io.importer.ModelImporter;
 import org.mastodon.mamut.io.project.MamutProject;
 import org.mastodon.mamut.model.Model;
 import org.mastodon.model.AbstractModelImporter;
@@ -28,16 +29,16 @@ public class ReloadFromDiskUtils
 	{
 		try (
 				MamutProject.ProjectReader reader = projectModel.getProject().openForReading();
-				ModelImporter ignored = new ModelImporter( projectModel.getModel() ); // this pauses listeners and resets the undo history
+				AutoClosableModelImporter ignored = new AutoClosableModelImporter( projectModel.getModel() ); // this pauses listeners and resets the undo history
 		)
 		{
 			projectModel.getModel().loadRaw( reader );
 		}
 	}
 
-	private static class ModelImporter extends AbstractModelImporter< Model > implements AutoCloseable
+	private static class AutoClosableModelImporter extends ModelImporter implements AutoCloseable
 	{
-		protected ModelImporter( Model model )
+		protected AutoClosableModelImporter( Model model )
 		{
 			super( model );
 			startImport();

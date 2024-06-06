@@ -61,7 +61,7 @@ public class DefaultMastodonGitSettingsService extends AbstractService implement
 	@Override
 	public void askForAuthorName()
 	{
-		Pair< String, String > result = SetAuthorDialog.show();
+		Pair< String, String > result = SetAuthorDialog.show( getAuthorName(), getAuthorEmail() );
 		if ( result == null )
 			return;
 		setAuthorName( result.getLeft() );

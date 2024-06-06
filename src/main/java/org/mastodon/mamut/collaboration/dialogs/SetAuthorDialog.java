@@ -20,10 +20,14 @@ public class SetAuthorDialog
 	 * Show a dialog that allows the user to set the author name and email.
 	 * The method blocks until the dialog is closed.
 	 *
+	 * @param initialAuthorName the initial author name to display in the dialog.
+	 *                          Can be null.
+	 * @param initialEmail      the initial email address to display in the dialog.
+	 *                          Can be null.
 	 * @return a pair of two strings: the author name and the author email address.
 	 * Returns null if the dialog was canceled.
 	 */
-	public static Pair< String, String > show()
+	public static Pair< String, String > show( String initialAuthorName, String initialEmail )
 	{
 		final String description = "<html><body align=left>"
 				+ "The name and email that you specify below<br>"
@@ -36,9 +40,13 @@ public class SetAuthorDialog
 		panel.add( new JLabel( description ), "span, grow, wrap" );
 		panel.add( new JLabel( "Author Name" ), "align right" );
 		JTextField authorField = new JTextField();
+		if ( initialAuthorName != null )
+			authorField.setText( initialAuthorName);
 		panel.add( authorField, "grow, wrap" );
 		panel.add( new JLabel( "Author Email" ), "align right" );
 		JTextField emailField = new JTextField( "noreply@example.com" );
+		if ( initialEmail != null )
+			emailField.setText(initialEmail);
 		panel.add( emailField, "grow, wrap" );
 		int result = JOptionPane.showOptionDialog( null, panel, "Set Author Name", JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE, null, new Object[] { "Set Name", "Cancel" }, null );
 		if ( result != JOptionPane.OK_OPTION )

@@ -18,11 +18,16 @@ public interface MastodonGitSettingsService extends ImageJService
 	void setAuthorEmail( String email );
 
 	/**
-	 * Return true if the author is specified. Ask the user for the author
-	 * name and email if they are not specified. Return false if the user does not
-	 * provide the author name.
+	 * If the author name is not yet set, show a dialog to ask the user
+	 * for author name and email.
 	 * <p>
 	 * May block until the user provides the author name.
+	 *
+	 * @param message a message that is displayed in the dialog, explaining
+	 *                why the author name is needed.
+	 *
+	 * @return {@code true} if the author is set after this method returns.
+	 *       {@code false} if the user canceled the dialog.
 	 */
 	boolean ensureAuthorIsSet( String message );
 

@@ -16,6 +16,13 @@ public class SetAuthorDialog
 		// prevent from instantiation
 	}
 
+	/**
+	 * Show a dialog that allows the user to set the author name and email.
+	 * The method blocks until the dialog is closed.
+	 *
+	 * @return a pair of two strings: the author name and the author email address.
+	 * Returns null if the dialog was canceled.
+	 */
 	public static Pair< String, String > show()
 	{
 		final String description = "<html><body align=left>"
@@ -34,9 +41,9 @@ public class SetAuthorDialog
 		JTextField emailField = new JTextField( "noreply@example.com" );
 		panel.add( emailField, "grow, wrap" );
 		int result = JOptionPane.showOptionDialog( null, panel, "Set Author Name", JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE, null, new Object[] { "Set Name", "Cancel" }, null );
-		if ( result == 0 )
-			return Pair.of( authorField.getText(), emailField.getText() );
-		return null;
+		if ( result != JOptionPane.OK_OPTION )
+			return null;
+		return Pair.of( authorField.getText(), emailField.getText() );
 	}
 
 }

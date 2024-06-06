@@ -40,7 +40,10 @@ import org.mastodon.mamut.KeyConfigScopes;
 import org.mastodon.mamut.collaboration.commands.MastodonGitCloneRepository;
 import org.mastodon.mamut.collaboration.commands.MastodonGitCreateRepository;
 import org.mastodon.mamut.collaboration.commands.MastodonGitNewBranch;
-import org.mastodon.mamut.collaboration.commands.MastodonGitSetAuthorCommand;
+import org.mastodon.mamut.collaboration.dialogs.SetAuthorDialog;
+import org.mastodon.mamut.collaboration.dialogs.CommitMessageDialog;
+import org.mastodon.mamut.collaboration.dialogs.ErrorDialog;
+import org.mastodon.mamut.collaboration.dialogs.NotificationDialog;
 import org.mastodon.mamut.collaboration.settings.MastodonGitSettingsService;
 import org.mastodon.mamut.collaboration.utils.ActionDescriptions;
 import org.mastodon.mamut.collaboration.utils.BasicDescriptionProvider;
@@ -164,16 +167,14 @@ public class MastodonGitController extends BasicMamutPlugin
 
 	private void setAuthor()
 	{
-		commandService.run( MastodonGitSetAuthorCommand.class, true );
+		settingsService.askForAuthorName();
 	}
 
 	private void shareProject()
 	{
-		if ( !settingsService.isAuthorSpecified() )
-		{
-			askForAuthorName( "Please set your author name before sharing a project." );
+		if ( !settingsService.ensureAuthorIsSet( "Please set your author name before sharing a project." ) )
 			return;
-		}
+
 		MastodonGitCreateRepository.Callback callback = ( File directory, String url ) -> {
 			this.repository = MastodonGitRepository.shareProject( getProjectModel(), directory, url );
 			updateEnableCommands();
@@ -194,11 +195,8 @@ public class MastodonGitController extends BasicMamutPlugin
 
 	private void commit()
 	{
-		if ( !settingsService.isAuthorSpecified() )
-		{
-			askForAuthorName( "Please set your author name before adding a save point (commit)." );
+		if ( !settingsService.ensureAuthorIsSet( "Please set your author name before adding a save point (commit)." ) )
 			return;
-		}
 		run( "Add Save Point (Commit)", () -> {
 			if ( repository.isClean() )
 				NotificationDialog.show( "Add Save Point (Commit)",
@@ -257,11 +255,9 @@ public class MastodonGitController extends BasicMamutPlugin
 
 	private void mergeBranch()
 	{
-		if ( !settingsService.isAuthorSpecified() )
-		{
-			askForAuthorName( "You need to set your author name before you can merge branches." );
+		if ( !settingsService.ensureAuthorIsSet( "You need to set your author name before you can merge branches." ) )
 			return;
-		}
+
 		try
 		{
 			List< String > branches = repository.getBranches();
@@ -281,6 +277,9 @@ public class MastodonGitController extends BasicMamutPlugin
 
 	private void pull()
 	{
+		if ( !settingsService.ensureAuthorIsSet( "You need to set your author name before you can pull branches." ) )
+			return;
+
 		run( "Download Changes (Pull)", () -> {
 			try
 			{
@@ -324,16 +323,6 @@ public class MastodonGitController extends BasicMamutPlugin
 		run( "Go Back To Last Save Point (Reset)", () -> repository.reset() );
 	}
 
-	private void askForAuthorName( String message )
-	{
-		String title = "Set Author Name";
-		String[] options = { "Set Author Name", "Cancel" };
-		int result = JOptionPane.showOptionDialog( null, message, title, JOptionPane.YES_NO_OPTION,
-				JOptionPane.PLAIN_MESSAGE, null, options, options[ 0 ] );
-		if ( result == JOptionPane.YES_OPTION )
-			setAuthor();
-	}
-
 	private void showBranchName()
 	{
 		run( "Show Branch Name", () -> {
@@ -348,6 +337,9 @@ public class MastodonGitController extends BasicMamutPlugin
 
 	private void synchronize()
 	{
+		if ( !settingsService.ensureAuthorIsSet( "Please set your author name before syncing with the remote changes." ) )
+			return;
+
 		run( "Synchronize Changes", () -> {
 			boolean clean = repository.isClean();
 			if ( !clean )

@@ -35,6 +35,7 @@ public class MasgitoffIoTest
 		{
 			final ProjectModel projectModel = ProjectLoader.open( "/home/arzt/devel/mastodon/mastodon-git/src/test/resources/org/mastodon/mamut/collaboration/tiny/tiny-project.mastodon", context );
 			final ModelGraph graph = projectModel.getModel().getGraph();
+			graph.saveRaw( new FileOutputStream( "test.raw" ), ModelSerializer.getInstance() );
 			final File file = new File( "tmp.masgitoff" );
 			if ( file.isDirectory() )
 				FileUtils.deleteDirectory( file );
@@ -59,6 +60,7 @@ public class MasgitoffIoTest
 		final ModelSerializer modelSerializer = ModelSerializer.getInstance();
 
 		writeRawTable( createSubDirectory( file, "spots" ), spots, ( spot, out ) -> {}, modelSerializer.getVertexSerializer() );
+		writeSpotLabels( createSubDirectory( file, "spots_labels" ), spots );
 		final Spot ref = graph.vertices().createRef();
 		writeRawTable( createSubDirectory( file, "links" ), links, ( link, out ) -> {
 			out.writeInt( link.getSource( ref ).getInternalPoolIndex() );
@@ -66,6 +68,18 @@ public class MasgitoffIoTest
 			out.writeInt( link.getSourceOutIndex() );
 			out.writeInt( link.getTargetInIndex() );
 		}, modelSerializer.getEdgeSerializer() );
+	}
+
+	private void writeSpotLabels( File spotsLabels, RefList< Spot > spots ) throws IOException
+	{
+		try (final DataOutputStream out = new DataOutputStream( new BufferedOutputStream( new FileOutputStream( spotsLabels ) ) ))
+		{
+			for ( Spot spot : spots )
+			{
+				out.writeInt( spot.getInternalPoolIndex() );
+				out.writeUTF( spot.getLabel() );
+			}
+		}
 	}
 
 	private interface Deserializer< T >

@@ -12,7 +12,6 @@ import java.util.HashSet;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
-import org.jetbrains.annotations.TestOnly;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mastodon.mamut.ProjectModel;
@@ -82,8 +81,7 @@ public class MastodonGitRepositoryTest
 		try (final TwoReposOneRemote example = new TwoReposOneRemote())
 		{
 			addSpot( example.projectModel2, "Hello World!" );
-			ProjectSaver.saveProject( example.projectModel2, null );
-			example.repo2.commitWithoutSave( "Add spot" );
+			example.repo2.commit( "Add spot" );
 			example.repo2.push();
 			example.repo1.pull();
 			ModelAsserts.assertModelEquals( example.projectModel1.getModel(), example.projectModel2.getModel() );
@@ -152,8 +150,7 @@ public class MastodonGitRepositoryTest
 			assertTrue( repo.isClean() );
 			addSpot( example.projectModel1, "Hello World!" );
 			assertFalse( repo.isClean() );
-			ProjectSaver.saveProject( example.projectModel1, null );
-			repo.commitWithoutSave( "Add spot" );
+			repo.commit( "Add spot" );
 			assertTrue( repo.isClean() );
 		}
 	}
@@ -171,8 +168,7 @@ public class MastodonGitRepositoryTest
 			repo.createNewBranch( "test" );
 			assertEquals( "refs/heads/test", repo.getCurrentBranch() );
 			addSpot( example.projectModel1, label );
-			ProjectSaver.saveProject( example.projectModel1, null );
-			repo.commitWithoutSave( "Add spot" );
+			repo.commit( "Add spot" );
 
 			// switch branch to "master", and run some tests
 			repo.switchBranch( "master" );
@@ -202,8 +198,7 @@ public class MastodonGitRepositoryTest
 			example.repo1.createNewBranch( "branchA" );
 			final String spotLabel = "new spot in branch A";
 			addSpot( example.projectModel1, spotLabel );
-			ProjectSaver.saveProject( example.projectModel1, null );
-			example.repo1.commitWithoutSave( "add spot" );
+			example.repo1.commit( "add spot" );
 			example.repo1.push();
 			example.repo2.fetchAll();
 			example.repo2.switchBranch( "refs/remotes/origin/branchA" );
@@ -233,8 +228,7 @@ public class MastodonGitRepositoryTest
 		try (final TwoReposOneRemote example = new TwoReposOneRemote())
 		{
 			addSpot( example.projectModel1, "spotA" );
-			ProjectSaver.saveProject( example.projectModel1, null );
-			example.repo1.commitWithoutSave( "commit A" );
+			example.repo1.commit( "commit A" );
 			addSpot( example.projectModel1, "spotB" );
 			ProjectSaver.saveProject( example.projectModel1, null );
 
@@ -254,12 +248,10 @@ public class MastodonGitRepositoryTest
 		try (final TwoReposOneRemote example = new TwoReposOneRemote())
 		{
 			addSpot( example.projectModel1, "spotA" );
-			ProjectSaver.saveProject( example.projectModel1, null );
-			example.repo1.commitWithoutSave( "commit A" );
+			example.repo1.commit( "commit A" );
 			example.repo1.push();
 			addSpot( example.projectModel1, "spotB" );
-			ProjectSaver.saveProject( example.projectModel1, null );
-			example.repo1.commitWithoutSave( "commit B" );
+			example.repo1.commit( "commit B" );
 
 			assertTrue( hasSpot( example.projectModel1, "spotB" ) );
 			assertTrue( hasSpot( example.projectModel1, "spotA" ) );
@@ -278,14 +270,12 @@ public class MastodonGitRepositoryTest
 		{
 			final Path pathA = TestResources.asPath( "merge/tiny-project_branch-a.mastodon" );
 			loadFromDifferentFile( example.projectModel1, pathA );
-			ProjectSaver.saveProject( example.projectModel1, null );
-			example.repo1.commitWithoutSave( "commit A" );
+			example.repo1.commit( "commit A" );
 			example.repo1.push();
 
 			final Path pathB = TestResources.asPath( "merge/tiny-project_branch-b.mastodon" );
 			loadFromDifferentFile( example.projectModel2, pathB );
-			ProjectSaver.saveProject( example.projectModel2, null );
-			example.repo2.commitWithoutSave( "commit B" );
+			example.repo2.commit( "commit B" );
 			example.repo2.pull();
 
 			final Model expected = ModelIO.open( TestResources.asPath( "merge/tiny-project_merged.mastodon" ).toString() );
@@ -301,14 +291,12 @@ public class MastodonGitRepositoryTest
 			example.repo1.createNewBranch( "branch-a" );
 			final Path pathA = TestResources.asPath( "merge/tiny-project_branch-a.mastodon" );
 			loadFromDifferentFile( example.projectModel1, pathA );
-			ProjectSaver.saveProject( example.projectModel1, null );
-			example.repo1.commitWithoutSave( "commit A" );
+			example.repo1.commit( "commit A" );
 
 			example.repo1.createNewBranch( "branch-b" );
 			final Path pathB = TestResources.asPath( "merge/tiny-project_branch-b.mastodon" );
 			loadFromDifferentFile( example.projectModel1, pathB );
-			ProjectSaver.saveProject( example.projectModel1, null );
-			example.repo1.commitWithoutSave( "commit B" );
+			example.repo1.commit( "commit B" );
 
 			example.repo1.switchBranch( "master" );
 			example.repo1.mergeBranch( "refs/heads/branch-a" );

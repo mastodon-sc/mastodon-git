@@ -196,6 +196,22 @@ public class MastodonGitRepository
 	}
 
 	/**
+	 * Save the project and add a commit.
+	 * <p>
+	 * This method is mostly for testing purposes. As production code would
+	 * usually run {@link #isClean()} before asking the user for a commit message
+	 * and then call {@link #commitWithoutSave(String)} to avoid saving the
+	 * project twice.
+	 *
+	 * @param message the commit message.
+	 */
+	public synchronized void commit( final String message ) throws Exception
+	{
+		ProjectSaver.saveProject( projectRoot, projectModel );
+		commitWithoutSave( message );
+	}
+
+	/**
 	 * This method performs an operation similar to {@code "git push origin --set-upstream <current-branch>"}.
 	 *
 	 * @throws MastodonGitException if the push fails because the remote server has changes that the local

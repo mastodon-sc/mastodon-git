@@ -81,11 +81,14 @@ public class MastodonGitRepository
 
 	private final ProjectModel projectModel;
 
+	private final File projectRoot;
+
 	private final MastodonGitSettingsService settingsService;
 
 	public MastodonGitRepository( final ProjectModel projectModel )
 	{
 		this.projectModel = projectModel;
+		this.projectRoot = projectModel.getProject().getProjectRoot();
 		settingsService = projectModel.getContext().service( MastodonGitSettingsService.class );
 	}
 
@@ -130,6 +133,11 @@ public class MastodonGitRepository
 		git.push().setCredentialsProvider( credentials.getSingleUseCredentialsProvider() ).setRemote( "origin" ).call();
 		git.close();
 		return new MastodonGitRepository( projectModel );
+	}
+
+	public File getProjectRoot()
+	{
+		return projectRoot;
 	}
 
 	private static boolean isDirectoryEmpty( final File directory )
@@ -267,9 +275,7 @@ public class MastodonGitRepository
 	 */
 	public synchronized void switchBranch( final String branchName ) throws Exception
 	{
-		final MamutProject project = projectModel.getProject();
-		final File projectRoot = project.getProjectRoot();
-		try (final Git git = initGit( projectRoot ))
+		try (final Git git = initGit())
 		{
 			ensureClean( git, "switching the branch" );
 			final boolean isRemoteBranch = branchName.startsWith( "refs/remotes/" );
@@ -338,8 +344,6 @@ public class MastodonGitRepository
 	public synchronized void mergeBranch( final String selectedBranch ) throws Exception
 	{
 		final Context context = projectModel.getContext();
-		final MamutProject project = projectModel.getProject();
-		final File projectRoot = project.getProjectRoot();
 		try (final Git git = initGit())
 		{
 			ensureClean( git, "merging" );
@@ -349,6 +353,8 @@ public class MastodonGitRepository
 			final Dataset dsB = new Dataset( projectRoot.getAbsolutePath() );
 			git.checkout().setName( currentBranch ).call();
 			git.merge().setCommit( false ).include( git.getRepository().exactRef( selectedBranch ) ).call(); // TODO selected branch, should not be a string but a ref instead
+			final MamutProject project = projectModel.getProject();
+			project.setProjectRoot( projectRoot );
 			mergeAndCommit( context, project, dsA, dsB, "Merge commit generated with Mastodon" );
 			reloadFromDisk();
 		}
@@ -362,8 +368,6 @@ public class MastodonGitRepository
 	public synchronized void pull() throws Exception
 	{
 		final Context context = projectModel.getContext();
-		final MamutProject project = projectModel.getProject();
-		final File projectRoot = project.getProjectRoot();
 		try (final Git git = initGit())
 		{
 			ensureClean( git, "pulling" );
@@ -375,7 +379,11 @@ public class MastodonGitRepository
 						.setRebase( false )
 						.call().isSuccessful();
 				if ( conflict )
+				{
+					final MamutProject project = projectModel.getProject();
+					project.setProjectRoot( projectRoot );
 					automaticMerge( context, project, projectRoot, git );
+				}
 			}
 			finally
 			{
@@ -419,7 +427,6 @@ public class MastodonGitRepository
 
 	private static void saveModel( final Context context, final Model model, final MamutProject project ) throws IOException
 	{
-		project.setProjectRoot( project.getProjectRoot() );
 		try (final MamutProject.ProjectWriter writer = project.openForWriting())
 		{
 			MamutProjectIO.save( project, writer );
@@ -456,12 +463,6 @@ public class MastodonGitRepository
 	}
 
 	private synchronized Git initGit() throws IOException
-	{
-		final File projectRoot = projectModel.getProject().getProjectRoot();
-		return initGit( projectRoot );
-	}
-
-	private synchronized Git initGit( final File projectRoot ) throws IOException
 	{
 		final boolean correctFolder = projectRoot.getName().equals( "mastodon.project" );
 		if ( !correctFolder )
@@ -511,9 +512,9 @@ public class MastodonGitRepository
 		}
 	}
 
-	private void ensureClean( final Git git, final String title ) throws GitAPIException
+	private void ensureClean( final Git git, final String title ) throws Exception
 	{
-		ProjectSaver.saveProject( projectModel, null );
+		ProjectSaver.saveProject( projectRoot, projectModel );
 		final boolean clean = isClean( git );
 		if ( !clean )
 			throw new MastodonGitException( "There are uncommitted changes. Please add a save point before " + title + "." );
@@ -525,7 +526,7 @@ public class MastodonGitRepository
 	 */
 	public boolean isClean() throws Exception
 	{
-		ProjectSaver.saveProject( projectModel, null );
+		ProjectSaver.saveProject( projectRoot, projectModel );
 		try (final Git git = initGit())
 		{
 			return isClean( git );

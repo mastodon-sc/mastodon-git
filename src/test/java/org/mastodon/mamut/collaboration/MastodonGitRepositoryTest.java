@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -11,6 +12,7 @@ import java.util.HashSet;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
+import org.jetbrains.annotations.TestOnly;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mastodon.mamut.ProjectModel;
@@ -61,7 +63,8 @@ public class MastodonGitRepositoryTest
 			Git.init().setDirectory( centralRepo.toFile() ).setBare( true ).call().close();
 			// "Share" the project by "uploading" it to the empty repository.
 			Files.createDirectory( localRepo );
-			MastodonGitRepository.shareProject( projectModel, localRepo.toFile(), centralRepo.toString() );
+			final MastodonGitRepository mgr = MastodonGitRepository.shareProject( projectModel, localRepo.toFile(), centralRepo.toString() );
+			assertEquals( localRepo.resolve( "mastodon.project" ).toFile(), mgr.getProjectRoot() );
 			// Clone the repository to a new location.
 			MastodonGitRepository.cloneRepository( centralRepo.toString(), clonedRepo.toFile() );
 			final ProjectModel clonedProjectModel = ProjectLoader.open( clonedRepo.resolve( "mastodon.project" ).toString(), context2 );
@@ -323,4 +326,33 @@ public class MastodonGitRepositoryTest
 			projectModel.getModel().loadRaw( reader );
 		}
 	}
+
+	@Test
+	public void testSaveAsBug() throws Exception
+	{
+		// Running "Save Project As" from the GUI should not change how "Mastodon Git Collaborative" operates.
+		// The test checks that Mastodon Git commits to the correct repository after a "Save Project As".
+		try (final TwoReposOneRemote example = new TwoReposOneRemote())
+		{
+			final File oldRoot = example.projectModel1.getProject().getProjectRoot();
+
+			// Simulate a "Save Project As" operation
+			// (The new location is also in a git repository to raise no suspicion/exceptions.)
+			ProjectSaver.saveProject( example.projectModel2.getProject().getProjectRoot(), example.projectModel1 );
+
+			addSpot( example.projectModel1, "Hello World!" );
+
+			// Perform a commit
+			final boolean clean = example.repo1.isClean();
+			example.repo1.commitWithoutSave( "Add a spot" );
+
+			// test that the commit was done in the correct repository
+			assertFalse( clean );
+			assertEquals( oldRoot, example.projectModel1.getProject().getProjectRoot() );
+			final ProjectModel reopened = ProjectLoader.open( oldRoot.toString(), example.context1 );
+			assertTrue( hasSpot( reopened, "Hello World!" ) );
+			reopened.close();
+		}
+	}
+
 }

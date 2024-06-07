@@ -198,8 +198,7 @@ public class MastodonGitRepositoryTest
 		{
 			example.repo1.createNewBranch( "branchA" );
 			final String spotLabel = "new spot in branch A";
-			final ProjectModel projectModel1 = example.projectModel1;
-			addSpot( projectModel1, spotLabel );
+			addSpot( example.projectModel1, spotLabel );
 			ProjectSaver.saveProject( example.projectModel1, null );
 			example.repo1.commitWithoutSave( "add spot" );
 			example.repo1.push();

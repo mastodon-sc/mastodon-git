@@ -9,7 +9,7 @@ public class MastodonGitRepositoryDemo
 {
 	public static void main( String... args ) throws Exception
 	{
-		File directory = new File( "/home/arzt/Datasets/DeepLineage/Trackathon/trackathon-lyon-test/" );
+		File directory = new File( "/home/arzt/tmp/2/mastodon-git-test-project" );
 		if ( !directory.isDirectory() )
 			throw new RuntimeException( "Expected directory: " + directory );
 		Context context = new Context();

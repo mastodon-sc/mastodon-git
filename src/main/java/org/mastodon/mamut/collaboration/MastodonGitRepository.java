@@ -489,11 +489,6 @@ public class MastodonGitRepository
 		return Git.open( gitRoot );
 	}
 
-	private synchronized boolean isClean( final Git git ) throws GitAPIException
-	{
-		return git.status().call().isClean();
-	}
-
 	public boolean isRepository()
 	{
 		try (final Git ignored = initGit())
@@ -530,7 +525,6 @@ public class MastodonGitRepository
 
 	private void ensureClean( final Git git, final String title ) throws Exception
 	{
-		ProjectSaver.saveProject( projectRoot, projectModel );
 		final boolean clean = isClean( git );
 		if ( !clean )
 			throw new MastodonGitException( "There are uncommitted changes. Please add a save point before " + title + "." );
@@ -542,10 +536,15 @@ public class MastodonGitRepository
 	 */
 	public boolean isClean() throws Exception
 	{
-		ProjectSaver.saveProject( projectRoot, projectModel );
 		try (final Git git = initGit())
 		{
 			return isClean( git );
 		}
+	}
+
+	private boolean isClean( final Git git ) throws Exception
+	{
+		ProjectSaver.saveProject( projectRoot, projectModel );
+		return git.status().call().isClean();
 	}
 }

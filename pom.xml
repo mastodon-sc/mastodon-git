@@ -14,7 +14,7 @@
 
 	<name>Mastodon Git Collaboration Tools</name>
 	<description>A Mastodon plugin that allow to collaborate on a dataset via git.</description>
-	<url>https://github.com/maarzt/mastodon-git</url>
+	<url>https://github.com/mastodon-sc/mastodon-git</url>
 	<inceptionYear>2023</inceptionYear>
 	<organization>
 		<name>Mastodon Science</name>
@@ -92,18 +92,18 @@
 	</mailingLists>
 
 	<scm>
-		<connection>scm:git:https:github.com/maarzt/mastodon-git</connection>
-		<developerConnection>scm:git:git@github.com:maarzt/mastodon-git</developerConnection>
+		<connection>scm:git:https:github.com/mastodon-sc/mastodon-git</connection>
+		<developerConnection>scm:git:git@github.com:mastodon-sc/mastodon-git</developerConnection>
 		<tag>HEAD</tag>
-		<url>https://github.com/maarzt/mastodon-git</url>
+		<url>https://github.com/mastodon-sc/mastodon-git</url>
 	</scm>
 	<issueManagement>
 		<system>GitHub</system>
-		<url>https://github.com/maarzt/mastodon-git/issues</url>
+		<url>https://github.com/mastodon-sc/mastodon-git/issues</url>
 	</issueManagement>
 	<ciManagement>
 		<system>GitHub Actions</system>
-		<url>https://github.com/maarzt/mastodon-git/actions</url>
+		<url>https://github.com/mastodon-sc/mastodon-git/actions</url>
 	</ciManagement>
 
 	<properties>

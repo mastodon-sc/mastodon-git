@@ -34,9 +34,9 @@ public class MastodonGitRepositoryTest
 	@BeforeClass
 	public static void init()
 	{
-		try (Context context = new Context())
+		try (final Context context = new Context())
 		{
-			MastodonGitSettingsService settings = context.getService( MastodonGitSettingsService.class );
+			final MastodonGitSettingsService settings = context.getService( MastodonGitSettingsService.class );
 			settings.setAuthorName( "Mastodon Git Test" );
 			settings.setAuthorEmail( "noreply@example.com" );
 		}
@@ -45,18 +45,18 @@ public class MastodonGitRepositoryTest
 	@Test
 	public void testShareAndCloneProject() throws Exception
 	{
-		Path tempDirectory = Files.createTempDirectory( "mastodon-git-share-test" );
-		Path centralRepo = tempDirectory.resolve( "central-repo.git" );
-		Path localRepo = tempDirectory.resolve( "local-repo" );
-		Path clonedRepo = tempDirectory.resolve( "local-repo2" );
+		final Path tempDirectory = Files.createTempDirectory( "mastodon-git-share-test" );
+		final Path centralRepo = tempDirectory.resolve( "central-repo.git" );
+		final Path localRepo = tempDirectory.resolve( "local-repo" );
+		final Path clonedRepo = tempDirectory.resolve( "local-repo2" );
 		try (
-				Context context1 = new Context();
-				Context context2 = new Context();
+				final Context context1 = new Context();
+				final Context context2 = new Context();
 		)
 		{
 			// Open small mastodon project.
-			String path = MastodonGitRepositoryTest.class.getResource( "tiny/tiny-project.mastodon" ).getPath();
-			ProjectModel projectModel = ProjectLoader.open( path, context1 );
+			final String path = MastodonGitRepositoryTest.class.getResource( "tiny/tiny-project.mastodon" ).getPath();
+			final ProjectModel projectModel = ProjectLoader.open( path, context1 );
 			// Create empty git repository. This will serve as the remote for testing purposes.
 			Git.init().setDirectory( centralRepo.toFile() ).setBare( true ).call().close();
 			// "Share" the project by "uploading" it to the empty repository.
@@ -64,7 +64,7 @@ public class MastodonGitRepositoryTest
 			MastodonGitRepository.shareProject( projectModel, localRepo.toFile(), centralRepo.toString() );
 			// Clone the repository to a new location.
 			MastodonGitRepository.cloneRepository( centralRepo.toString(), clonedRepo.toFile() );
-			ProjectModel clonedProjectModel = ProjectLoader.open( clonedRepo.resolve( "mastodon.project" ).toString(), context2 );
+			final ProjectModel clonedProjectModel = ProjectLoader.open( clonedRepo.resolve( "mastodon.project" ).toString(), context2 );
 			assertEquals( localRepo.resolve( "mastodon.project" ).toFile(), projectModel.getProject().getProjectRoot() );
 			assertEquals( clonedRepo.resolve( "mastodon.project" ).toFile(), clonedProjectModel.getProject().getProjectRoot() );
 			ModelAsserts.assertModelEquals( projectModel.getModel(), clonedProjectModel.getModel() );
@@ -76,7 +76,7 @@ public class MastodonGitRepositoryTest
 	@Test
 	public void testCommitPullPush() throws Exception
 	{
-		try (TwoReposOneRemote example = new TwoReposOneRemote())
+		try (final TwoReposOneRemote example = new TwoReposOneRemote())
 		{
 			addSpot( example.projectModel2, "Hello World!" );
 			ProjectSaver.saveProject( example.projectModel2, null );
@@ -107,12 +107,12 @@ public class MastodonGitRepositoryTest
 		public TwoReposOneRemote() throws Exception
 		{
 			tempDirectory = Files.createTempDirectory( "mastodon-git-share-test" );
-			Path centralRepo = tempDirectory.resolve( "central-repo.git" );
-			Path localRepo = tempDirectory.resolve( "local-repo" );
+			final Path centralRepo = tempDirectory.resolve( "central-repo.git" );
+			final Path localRepo = tempDirectory.resolve( "local-repo" );
 			context1 = new Context();
 			context2 = new Context();
 			// Open small mastodon project.
-			String path = MastodonGitRepositoryTest.class.getResource( "tiny/tiny-project.mastodon" ).getPath();
+			final String path = MastodonGitRepositoryTest.class.getResource( "tiny/tiny-project.mastodon" ).getPath();
 			projectModel1 = ProjectLoader.open( path, context1 );
 			// Create empty git repository. This will serve as the remote for testing purposes.
 			Git.init().setDirectory( centralRepo.toFile() ).setBare( true ).call().close();
@@ -120,7 +120,7 @@ public class MastodonGitRepositoryTest
 			Files.createDirectory( localRepo );
 			repo1 = MastodonGitRepository.shareProject( projectModel1, localRepo.toFile(), centralRepo.toString() );
 			// Clone the repository to a new location.
-			Path clone = tempDirectory.resolve( "local-repo2" );
+			final Path clone = tempDirectory.resolve( "local-repo2" );
 			MastodonGitRepository.cloneRepository( centralRepo.toString(), clone.toFile() );
 			projectModel2 = ProjectLoader.open( clone.resolve( "mastodon.project" ).toString(), context2 );
 			repo2 = new MastodonGitRepository( projectModel2 );
@@ -143,9 +143,9 @@ public class MastodonGitRepositoryTest
 	@Test
 	public void testIsClean() throws Exception
 	{
-		try (TwoReposOneRemote example = new TwoReposOneRemote())
+		try (final TwoReposOneRemote example = new TwoReposOneRemote())
 		{
-			MastodonGitRepository repo = example.repo1;
+			final MastodonGitRepository repo = example.repo1;
 			assertTrue( repo.isClean() );
 			addSpot( example.projectModel1, "Hello World!" );
 			assertFalse( repo.isClean() );
@@ -158,10 +158,10 @@ public class MastodonGitRepositoryTest
 	@Test
 	public void testSwitchBranchAndGetCurrentBranch() throws Exception
 	{
-		try (TwoReposOneRemote example = new TwoReposOneRemote())
+		try (final TwoReposOneRemote example = new TwoReposOneRemote())
 		{
-			String label = "some spot";
-			MastodonGitRepository repo = example.repo1;
+			final String label = "some spot";
+			final MastodonGitRepository repo = example.repo1;
 			assertTrue( repo.isClean() );
 
 			// create new branch "test" and add a spot
@@ -182,10 +182,10 @@ public class MastodonGitRepositoryTest
 		}
 	}
 
-	private boolean hasSpot( ProjectModel projectModel, String label )
+	private boolean hasSpot( final ProjectModel projectModel, final String label )
 	{
-		ModelGraph graph = projectModel.getModel().getGraph();
-		for ( Spot spot : graph.vertices() )
+		final ModelGraph graph = projectModel.getModel().getGraph();
+		for ( final Spot spot : graph.vertices() )
 			if ( spot.getLabel().equals( label ) )
 				return true;
 		return false;
@@ -194,11 +194,11 @@ public class MastodonGitRepositoryTest
 	@Test
 	public void testShareBranch() throws Exception
 	{
-		try (TwoReposOneRemote example = new TwoReposOneRemote())
+		try (final TwoReposOneRemote example = new TwoReposOneRemote())
 		{
 			example.repo1.createNewBranch( "branchA" );
-			String spotLabel = "new spot in branch A";
-			ProjectModel projectModel1 = example.projectModel1;
+			final String spotLabel = "new spot in branch A";
+			final ProjectModel projectModel1 = example.projectModel1;
 			addSpot( projectModel1, spotLabel );
 			ProjectSaver.saveProject( example.projectModel1, null );
 			example.repo1.commitWithoutSave( "add spot" );
@@ -211,7 +211,7 @@ public class MastodonGitRepositoryTest
 			example.repo2.switchBranch( "master" );
 			assertFalse( hasSpot( example.projectModel2, spotLabel ) );
 
-			HashSet< Object > expectedBranches = new HashSet<>();
+			final HashSet< Object > expectedBranches = new HashSet<>();
 			expectedBranches.add( "refs/heads/master" );
 			expectedBranches.add( "refs/heads/branchA" );
 			expectedBranches.add( "refs/remotes/origin/master" );
@@ -220,7 +220,7 @@ public class MastodonGitRepositoryTest
 		}
 	}
 
-	private static void addSpot( ProjectModel projectModel, String spotLabel )
+	private static void addSpot( final ProjectModel projectModel, final String spotLabel )
 	{
 		projectModel.getModel().getGraph().addVertex().init( 1, new double[ 3 ], 1 ).setLabel( spotLabel );
 	}
@@ -228,7 +228,7 @@ public class MastodonGitRepositoryTest
 	@Test
 	public void testReset() throws Exception
 	{
-		try (TwoReposOneRemote example = new TwoReposOneRemote())
+		try (final TwoReposOneRemote example = new TwoReposOneRemote())
 		{
 			addSpot( example.projectModel1, "spotA" );
 			ProjectSaver.saveProject( example.projectModel1, null );
@@ -249,7 +249,7 @@ public class MastodonGitRepositoryTest
 	@Test
 	public void testResetToRemoteBranch() throws Exception
 	{
-		try (TwoReposOneRemote example = new TwoReposOneRemote())
+		try (final TwoReposOneRemote example = new TwoReposOneRemote())
 		{
 			addSpot( example.projectModel1, "spotA" );
 			ProjectSaver.saveProject( example.projectModel1, null );
@@ -272,21 +272,21 @@ public class MastodonGitRepositoryTest
 	@Test
 	public void testPullWithAutomaticMerge() throws Exception
 	{
-		try (TwoReposOneRemote example = new TwoReposOneRemote())
+		try (final TwoReposOneRemote example = new TwoReposOneRemote())
 		{
-			Path pathA = TestResources.asPath( "merge/tiny-project_branch-a.mastodon" );
+			final Path pathA = TestResources.asPath( "merge/tiny-project_branch-a.mastodon" );
 			loadFromDifferentFile( example.projectModel1, pathA );
 			ProjectSaver.saveProject( example.projectModel1, null );
 			example.repo1.commitWithoutSave( "commit A" );
 			example.repo1.push();
 
-			Path pathB = TestResources.asPath( "merge/tiny-project_branch-b.mastodon" );
+			final Path pathB = TestResources.asPath( "merge/tiny-project_branch-b.mastodon" );
 			loadFromDifferentFile( example.projectModel2, pathB );
 			ProjectSaver.saveProject( example.projectModel2, null );
 			example.repo2.commitWithoutSave( "commit B" );
 			example.repo2.pull();
 
-			Model expected = ModelIO.open( TestResources.asPath( "merge/tiny-project_merged.mastodon" ).toString() );
+			final Model expected = ModelIO.open( TestResources.asPath( "merge/tiny-project_merged.mastodon" ).toString() );
 			ModelAsserts.assertModelEquals( expected, example.projectModel2.getModel() );
 		}
 	}
@@ -294,16 +294,16 @@ public class MastodonGitRepositoryTest
 	@Test
 	public void testMergeBranch() throws Exception
 	{
-		try (TwoReposOneRemote example = new TwoReposOneRemote())
+		try (final TwoReposOneRemote example = new TwoReposOneRemote())
 		{
 			example.repo1.createNewBranch( "branch-a" );
-			Path pathA = TestResources.asPath( "merge/tiny-project_branch-a.mastodon" );
+			final Path pathA = TestResources.asPath( "merge/tiny-project_branch-a.mastodon" );
 			loadFromDifferentFile( example.projectModel1, pathA );
 			ProjectSaver.saveProject( example.projectModel1, null );
 			example.repo1.commitWithoutSave( "commit A" );
 
 			example.repo1.createNewBranch( "branch-b" );
-			Path pathB = TestResources.asPath( "merge/tiny-project_branch-b.mastodon" );
+			final Path pathB = TestResources.asPath( "merge/tiny-project_branch-b.mastodon" );
 			loadFromDifferentFile( example.projectModel1, pathB );
 			ProjectSaver.saveProject( example.projectModel1, null );
 			example.repo1.commitWithoutSave( "commit B" );
@@ -312,14 +312,15 @@ public class MastodonGitRepositoryTest
 			example.repo1.mergeBranch( "refs/heads/branch-a" );
 			example.repo1.mergeBranch( "refs/heads/branch-b" );
 
-			Model expected = ModelIO.open( TestResources.asPath( "merge/tiny-project_merged.mastodon" ).toString() );
+			final Model expected = ModelIO.open( TestResources.asPath( "merge/tiny-project_merged.mastodon" ).toString() );
 			ModelAsserts.assertModelEquals( expected, example.projectModel1.getModel() );
 		}
 	}
 
-	private static void loadFromDifferentFile( ProjectModel projectModel, Path pathA ) throws IOException
+	private static void loadFromDifferentFile( final ProjectModel projectModel, final Path pathA ) throws IOException
 	{
-		try ( MamutProject.ProjectReader reader = MamutProjectIO.load( pathA.toString() ).openForReading() ) {
+		try (final MamutProject.ProjectReader reader = MamutProjectIO.load( pathA.toString() ).openForReading())
+		{
 			projectModel.getModel().loadRaw( reader );
 		}
 	}

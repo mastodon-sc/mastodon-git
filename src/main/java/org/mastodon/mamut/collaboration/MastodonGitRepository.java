@@ -183,7 +183,7 @@ public class MastodonGitRepository
 	/**
 	 * Commits last saved changes to the git repository.
 	 */
-	public void commitWithoutSave( final String message ) throws Exception
+	public synchronized void commitWithoutSave( final String message ) throws Exception
 	{
 		try (final Git git = initGit())
 		{
@@ -314,7 +314,7 @@ public class MastodonGitRepository
 		reloadFromDisk();
 	}
 
-	private synchronized String getSimpleName( final String branchName )
+	private String getSimpleName( final String branchName )
 	{
 		final String[] parts = branchName.split( "/" );
 		return parts[ parts.length - 1 ];
@@ -461,7 +461,7 @@ public class MastodonGitRepository
 		return output.getModel();
 	}
 
-	private synchronized void reloadFromDisk() throws IOException
+	private void reloadFromDisk() throws IOException
 	{
 		ReloadFromDiskUtils.reloadFromDisk( projectModel );
 	}
@@ -478,7 +478,7 @@ public class MastodonGitRepository
 		}
 	}
 
-	private synchronized Git initGit() throws IOException
+	private Git initGit() throws IOException
 	{
 		final boolean correctFolder = projectRoot.getName().equals( "mastodon.project" );
 		if ( !correctFolder )
@@ -489,7 +489,7 @@ public class MastodonGitRepository
 		return Git.open( gitRoot );
 	}
 
-	public boolean isRepository()
+	public synchronized boolean isRepository()
 	{
 		try (final Git ignored = initGit())
 		{
@@ -512,7 +512,7 @@ public class MastodonGitRepository
 	/**
 	 * Hard reset of the current branch to the remote branch.
 	 */
-	public void resetToRemoteBranch() throws Exception
+	public synchronized void resetToRemoteBranch() throws Exception
 	{
 		try (final Git git = initGit())
 		{
@@ -534,7 +534,7 @@ public class MastodonGitRepository
 	 * Returns true if the currently opened Mastodon project is the same as the last commit on the current branch.
 	 * Side effect: Saves the project.
 	 */
-	public boolean isClean() throws Exception
+	public synchronized boolean isClean() throws Exception
 	{
 		try (final Git git = initGit())
 		{

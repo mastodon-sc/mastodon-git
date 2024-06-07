@@ -175,7 +175,7 @@ public class MastodonGitController extends BasicMamutPlugin
 		if ( !settingsService.ensureAuthorIsSet( "Please set your author name before sharing a project." ) )
 			return;
 
-		MastodonGitCreateRepository.Callback callback = ( File directory, String url ) -> {
+		final MastodonGitCreateRepository.Callback callback = ( final File directory, final String url ) -> {
 			this.repository = MastodonGitRepository.shareProject( getProjectModel(), directory, url );
 			updateEnableCommands();
 		};
@@ -184,7 +184,7 @@ public class MastodonGitController extends BasicMamutPlugin
 
 	private void updateEnableCommands()
 	{
-		boolean isRepository = repository.isRepository();
+		final boolean isRepository = repository.isRepository();
 		IN_REPOSITORY_ACTIONS.forEach( action -> setActionEnabled( action, isRepository ) );
 	}
 
@@ -203,7 +203,7 @@ public class MastodonGitController extends BasicMamutPlugin
 						"<html><body><font size=+4 color=green>&#10003</font> No changes to commit." );
 			else
 			{
-				String commitMessage = CommitMessageDialog.showDialog();
+				final String commitMessage = CommitMessageDialog.showDialog();
 				if ( commitMessage == null )
 					return;
 				repository.commitWithoutSave( commitMessage );
@@ -234,20 +234,20 @@ public class MastodonGitController extends BasicMamutPlugin
 			{
 				repository.fetchAll();
 			}
-			catch ( Exception e )
+			catch ( final Exception e )
 			{
 				message += " \n(There was a failure downloading the latest branch changes.)";
 			}
-			List< String > branches = repository.getBranches();
-			String currentBranch = repository.getCurrentBranch();
+			final List< String > branches = repository.getBranches();
+			final String currentBranch = repository.getCurrentBranch();
 			// show JOptionPane that allows to select a branch
-			String selectedBranch = ( String ) JOptionPane.showInputDialog( null, message, "Switch Git Branch", JOptionPane.PLAIN_MESSAGE, null, branches.toArray(), currentBranch );
+			final String selectedBranch = ( String ) JOptionPane.showInputDialog( null, message, "Switch Git Branch", JOptionPane.PLAIN_MESSAGE, null, branches.toArray(), currentBranch );
 			if ( selectedBranch == null )
 				return;
 			// switch to selected branch
 			run( "Switch To Branch", () -> repository.switchBranch( selectedBranch ) );
 		}
-		catch ( Exception e )
+		catch ( final Exception e )
 		{
 			ErrorDialog.showErrorMessage( "Select Branch", e );
 		}
@@ -260,16 +260,16 @@ public class MastodonGitController extends BasicMamutPlugin
 
 		try
 		{
-			List< String > branches = repository.getBranches();
-			String currentBranch = repository.getCurrentBranch();
+			final List< String > branches = repository.getBranches();
+			final String currentBranch = repository.getCurrentBranch();
 			branches.remove( currentBranch );
 			// show JOptionPane that allows to select a branch
-			String selectedBranch = ( String ) JOptionPane.showInputDialog( null, "Select a branch", "Switch Git Branch", JOptionPane.PLAIN_MESSAGE, null, branches.toArray(), null );
+			final String selectedBranch = ( String ) JOptionPane.showInputDialog( null, "Select a branch", "Switch Git Branch", JOptionPane.PLAIN_MESSAGE, null, branches.toArray(), null );
 			if ( selectedBranch == null )
 				return;
 			repository.mergeBranch( selectedBranch );
 		}
-		catch ( Exception e )
+		catch ( final Exception e )
 		{
 			ErrorDialog.showErrorMessage( "Merge Branch", e );
 		}
@@ -285,7 +285,7 @@ public class MastodonGitController extends BasicMamutPlugin
 			{
 				repository.pull();
 			}
-			catch ( GraphMergeException e )
+			catch ( final GraphMergeException e )
 			{
 				if ( !( e instanceof GraphMergeConflictException ) )
 					e.printStackTrace();
@@ -294,10 +294,10 @@ public class MastodonGitController extends BasicMamutPlugin
 		} );
 	}
 
-	private void suggestPullAlternative( String errorMessage )
+	private void suggestPullAlternative( final String errorMessage )
 	{
-		String title = "Conflict During Download Of Changes (Pull)";
-		String message = "There was a merge conflict during the pull. Details:\n"
+		final String title = "Conflict During Download Of Changes (Pull)";
+		final String message = "There was a merge conflict during the pull. Details:\n"
 				+ "  " + errorMessage + "\n\n"
 				+ "You made changes on your computer that could not be automatically\n"
 				+ "merged with the changes on the server.\n\n"
@@ -306,8 +306,8 @@ public class MastodonGitController extends BasicMamutPlugin
 				+ "  2. Or cancel (And maybe save your local changes to a new branch,\n"
 				+ "             which you can then be merged into the remote branch.)\n";
 
-		String[] options = { "Discard Local Changes", "Cancel" };
-		int result = JOptionPane.showOptionDialog( null, message, title, JOptionPane.YES_NO_OPTION,
+		final String[] options = { "Discard Local Changes", "Cancel" };
+		final int result = JOptionPane.showOptionDialog( null, message, title, JOptionPane.YES_NO_OPTION,
 				JOptionPane.PLAIN_MESSAGE, null, options, options[ 0 ] );
 		if ( result == JOptionPane.YES_OPTION )
 			resetToRemoteBranch();
@@ -326,10 +326,10 @@ public class MastodonGitController extends BasicMamutPlugin
 	private void showBranchName()
 	{
 		run( "Show Branch Name", () -> {
-			String longBranchName = repository.getCurrentBranch();
-			String shortBranchName = longBranchName.replaceAll( "^refs/heads/", "" );
-			String title = "Current Branch Name";
-			String message = "<html><body>The current branch is:<br><b>" + shortBranchName;
+			final String longBranchName = repository.getCurrentBranch();
+			final String shortBranchName = longBranchName.replaceAll( "^refs/heads/", "" );
+			final String title = "Current Branch Name";
+			final String message = "<html><body>The current branch is:<br><b>" + shortBranchName;
 			SwingUtilities.invokeLater( () ->
 					JOptionPane.showMessageDialog( null, message, title, JOptionPane.PLAIN_MESSAGE ) );
 		} );
@@ -341,10 +341,10 @@ public class MastodonGitController extends BasicMamutPlugin
 			return;
 
 		run( "Synchronize Changes", () -> {
-			boolean clean = repository.isClean();
+			final boolean clean = repository.isClean();
 			if ( !clean )
 			{
-				String commitMessage = CommitMessageDialog.showDialog();
+				final String commitMessage = CommitMessageDialog.showDialog();
 				if ( commitMessage == null )
 					return;
 				repository.commitWithoutSave( commitMessage );
@@ -353,7 +353,7 @@ public class MastodonGitController extends BasicMamutPlugin
 			{
 				repository.pull();
 			}
-			catch ( GraphMergeException e )
+			catch ( final GraphMergeException e )
 			{
 				if ( !( e instanceof GraphMergeConflictException ) )
 					e.printStackTrace();
@@ -366,18 +366,18 @@ public class MastodonGitController extends BasicMamutPlugin
 		} );
 	}
 
-	private void run( String title, RunnableWithException action )
+	private void run( final String title, final RunnableWithException action )
 	{
 		new Thread( () -> {
 			try
 			{
 				action.run();
 			}
-			catch ( CancellationException e )
+			catch ( final CancellationException e )
 			{
 				// ignore
 			}
-			catch ( Exception e )
+			catch ( final Exception e )
 			{
 				ErrorDialog.showErrorMessage( title, e );
 			}

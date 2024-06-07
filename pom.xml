@@ -10,7 +10,7 @@
 
 	<groupId>org.mastodon</groupId>
 	<artifactId>mastodon-git</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.1</version>
 
 	<name>Mastodon Git Collaboration Tools</name>
 	<description>A Mastodon plugin that allow to collaborate on a dataset via git.</description>
@@ -94,7 +94,7 @@
 	<scm>
 		<connection>scm:git:https:github.com/mastodon-sc/mastodon-git</connection>
 		<developerConnection>scm:git:git@github.com:mastodon-sc/mastodon-git</developerConnection>
-		<tag>HEAD</tag>
+		<tag>mastodon-git-0.0.1</tag>
 		<url>https://github.com/mastodon-sc/mastodon-git</url>
 	</scm>
 	<issueManagement>

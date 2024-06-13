@@ -2,11 +2,10 @@
 
 ## Quick Installation
 
-You need to activate two update sites in Fiji:
+You need to activate three update sites in Fiji:
+- https://sites.imagej.net/Mastodon-jungle
 - https://sites.imagej.net/TomancakLab
-- https://sites.imagej.net/Maarzt
-
-(The second update site is not in the list of update sites. You need to add it manually by clicking “Add Unlisted Site”)
+- https://sites.imagej.net/Maarzt <br> *(The "Maarzt" update site is not in the list of update sites. You need to add it manually by clicking “Add Unlisted Site”)*
 
 Also make sure not to activate too many other update sites.
 
@@ -21,6 +20,10 @@ Start ImageJ Updater
 Click Manage Update Sites:
 
 ![image](images/image15.png)
+
+Search the Mastodon update site and select it:
+
+![image](https://github.com/mastodon-sc/mastodon-git/assets/24407711/e66e31e5-8ec5-43c6-b981-4a1892f7502f)
 
 Search the TomancakLab update site and select it:
 
@@ -42,6 +45,6 @@ Click “Apply and Close”
 
 Click “Apply Changes”
 
-![image](images/image13.png)
+![image](https://github.com/mastodon-sc/mastodon-git/assets/24407711/8b9e0664-8830-4483-95a3-80fb50fee455)
 
 The final step is to restart Fiji, after this you should see an entry “Plugins > Mastodon Git > Download Shared Project” in the menu:

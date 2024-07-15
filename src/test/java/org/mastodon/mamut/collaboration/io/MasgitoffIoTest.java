@@ -18,7 +18,6 @@ import org.mastodon.mamut.collaboration.utils.ModelAsserts;
 import org.mastodon.mamut.io.ProjectLoader;
 import org.mastodon.mamut.model.Link;
 import org.mastodon.mamut.model.ModelGraph;
-import org.mastodon.mamut.model.ModelSerializer;
 import org.mastodon.mamut.model.Spot;
 import org.mastodon.pool.PoolObject;
 import org.mastodon.pool.PoolObjectAttributeSerializer;

@@ -28,6 +28,7 @@ import mpicbg.spim.data.SpimDataException;
 
 public class MasgitoffIoTest
 {
+
 	@Test
 	public void test() throws SpimDataException, IOException
 	{
@@ -35,7 +36,6 @@ public class MasgitoffIoTest
 		{
 			final ProjectModel projectModel = ProjectLoader.open( "/home/arzt/devel/mastodon/mastodon-git/src/test/resources/org/mastodon/mamut/collaboration/tiny/tiny-project.mastodon", context );
 			final ModelGraph graph = projectModel.getModel().getGraph();
-			graph.saveRaw( new FileOutputStream( "test.raw" ), ModelSerializer.getInstance() );
 			final File file = new File( "tmp.masgitoff" );
 			if ( file.isDirectory() )
 				FileUtils.deleteDirectory( file );
@@ -60,7 +60,7 @@ public class MasgitoffIoTest
 		final ModelSerializer modelSerializer = ModelSerializer.getInstance();
 
 		writeRawTable( createSubDirectory( file, "spots" ), spots, ( spot, out ) -> {}, modelSerializer.getVertexSerializer() );
-		writeSpotLabels( createSubDirectory( file, "spots_labels" ), spots );
+		writeSpotLabels( new File( file, "spots_labels" ), spots );
 		final Spot ref = graph.vertices().createRef();
 		writeRawTable( createSubDirectory( file, "links" ), links, ( link, out ) -> {
 			out.writeInt( link.getSource( ref ).getInternalPoolIndex() );

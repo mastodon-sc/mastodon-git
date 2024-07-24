@@ -76,6 +76,12 @@
 			<artifactId>imagej-legacy</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.mastodon</groupId>
+			<artifactId>mastodon-collection</artifactId>
+			<version>1.0.0-beta-26</version>
+			<scope>compile</scope>
+		</dependency>
 
 	</dependencies>
 

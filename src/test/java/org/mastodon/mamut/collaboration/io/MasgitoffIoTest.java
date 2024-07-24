@@ -26,7 +26,7 @@ public class MasgitoffIoTest
 			final File file = new File( "tmp.masgitoff" );
 			if ( file.isDirectory() )
 				FileUtils.deleteDirectory( file );
-			MasgitoffIo.writeMasgitoff( graph, file );
+			MasgitoffIo.writeMasgitoff( projectModel.getModel(), file, new MasgitoffIo.MasgitoffIds( graph ) );
 			final ModelGraph newGraph = MasgitoffIo.readMasgitoff( file );
 			ModelAsserts.assertGraphEquals( graph, newGraph );
 		}

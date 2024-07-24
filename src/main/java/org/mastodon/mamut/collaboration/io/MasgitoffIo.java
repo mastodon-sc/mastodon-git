@@ -8,50 +8,170 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
-import org.mastodon.collection.RefList;
-import org.mastodon.collection.ref.RefArrayList;
+import org.mastodon.collection.ref.RefObjectHashMap;
 import org.mastodon.mamut.model.Link;
+import org.mastodon.mamut.model.Model;
 import org.mastodon.mamut.model.ModelGraph;
 import org.mastodon.mamut.model.Spot;
+import org.mastodon.pool.PoolCollectionWrapper;
 import org.mastodon.pool.PoolObject;
 import org.mastodon.pool.PoolObjectAttributeSerializer;
 
+import gnu.trove.iterator.TIntIterator;
+import gnu.trove.map.TObjectIntMap;
+import gnu.trove.map.hash.TObjectIntHashMap;
+
 public class MasgitoffIo
 {
-	static void writeMasgitoff( final ModelGraph graph, final File file ) throws IOException
+	public static class MasgitoffIds
+	{
+
+		private final Map< Spot, UUID > uuids;
+
+		private final Index< Spot > spotIndex;
+
+		private final Index< Link > linkIndex;
+
+		private final TObjectIntMap< String > stringIndex;
+
+		public MasgitoffIds( final ModelGraph graph )
+		{
+			this.uuids = new RefObjectHashMap<>( graph.vertices().getRefPool() );
+			this.spotIndex = new Index<>( graph.vertices().getRefPool() );
+			this.linkIndex = new Index<>( graph.edges().getRefPool() );
+			this.stringIndex = new TObjectIntHashMap<>();
+		}
+
+		public Map< Spot, UUID > getSpotUuids()
+		{
+			return uuids;
+		}
+
+		public Index< Spot > getSpotIndex()
+		{
+			return spotIndex;
+		}
+
+		public Index< Link > getLinkIndex()
+		{
+			return linkIndex;
+		}
+
+		public TObjectIntMap< String > getLabelIndex()
+		{
+			return stringIndex;
+		}
+	}
+
+	static void writeMasgitoff( final Model model, final File file, final MasgitoffIds masgitoffIds ) throws IOException
 	{
 		if ( !file.mkdir() )
 			throw new RuntimeException( "Could not create directory " + file.getAbsolutePath() );
 
-		final RefList< Spot > spots = new RefArrayList<>( graph.vertices().getRefPool() );
-		spots.addAll( graph.vertices() );
+		final ModelGraph graph = model.getGraph();
 
-		// Have a row index too
-		final RefList< Link > links = new RefArrayList<>( graph.edges().getRefPool() );
-		links.addAll( graph.edges() );
+		fillIds( model, masgitoffIds );
+		final Map< Spot, UUID > uuids = masgitoffIds.getSpotUuids();
+		final Index< Spot > spotIndex = masgitoffIds.getSpotIndex();
+		final Index< Link > linkIndex = masgitoffIds.getLinkIndex();
+		final TObjectIntMap< String > labelIndex = masgitoffIds.getLabelIndex();
 
-		final ModelSerializer modelSerializer = ModelSerializer.getInstance();
-
-		writeRawTable( createSubDirectory( file, "spots" ), spots, ( spot, out ) -> {}, modelSerializer.getVertexSerializer() );
-		writeSpotLabels( new File( file, "spots_labels" ), spots );
-		final Spot ref = graph.vertices().createRef();
-		writeRawTable( createSubDirectory( file, "links" ), links, ( link, out ) -> {
-			out.writeInt( link.getSource( ref ).getInternalPoolIndex() );
-			out.writeInt( link.getTarget( ref ).getInternalPoolIndex() );
-			out.writeInt( link.getSourceOutIndex() );
-			out.writeInt( link.getTargetInIndex() );
-		}, modelSerializer.getEdgeSerializer() );
+		writeSpotTable( file, spotIndex, uuids, labelIndex );
+		writeLinkTable( file, linkIndex, spotIndex, graph.vertexRef() );
+		writeSpotLabels( createSubDirectory( file, "spots_labels" ), labelIndex );
+		// FIXME: write labelsets
 	}
 
-	private static void writeSpotLabels( File spotsLabels, RefList< Spot > spots ) throws IOException
+	private static void writeSpotTable( final File file, final Index< Spot > spotIndex, final Map< Spot, UUID > uuids, final TObjectIntMap< String > labelIndex ) throws IOException
 	{
-		try (final DataOutputStream out = new DataOutputStream( new BufferedOutputStream( new FileOutputStream( spotsLabels ) ) ))
+		writeRawTable( createSubDirectory( file, "spots" ), spotIndex, ( id, spot, out ) -> {
+			final UUID uuid = uuids.get( spot );
+			out.writeLong( uuid.getLeastSignificantBits() );
+			out.writeLong( uuid.getMostSignificantBits() );
+			out.writeInt( labelIndex.get( spot.getLabel() ) );
+			final int tagId = 0; // FIXME: write actual labelset id
+			out.writeInt( tagId );
+		}, ModelSerializer.getInstance().getVertexSerializer() );
+	}
+
+	private static void writeLinkTable( final File file, final Index< Link > linkIndex, final Index< Spot > spotIndex, final Spot ref ) throws IOException
+	{
+		writeRawTable( createSubDirectory( file, "links" ), linkIndex, ( id, link, out ) -> {
+			out.writeInt( spotIndex.getId( link.getSource( ref ) ) );
+			out.writeInt( spotIndex.getId( link.getTarget( ref ) ) );
+			out.writeInt( link.getSourceOutIndex() );
+			out.writeInt( link.getTargetInIndex() );
+			final int tagId = 0; // FIXME: write actual labelset id
+			out.writeInt( tagId );
+		}, ModelSerializer.getInstance().getEdgeSerializer() );
+	}
+
+	private static void fillIds( final Model model, final MasgitoffIds masgitoffIds )
+	{
+		fillUuids( model, masgitoffIds.getSpotUuids() );
+		fillIndex( model.getGraph().vertices(), masgitoffIds.getSpotIndex() );
+		fillIndex( model.getGraph().edges(), masgitoffIds.getLinkIndex() );
+		fillLabelIndex( model.getGraph().vertices(), masgitoffIds.getLabelIndex() );
+	}
+
+	private static void fillUuids( final Model model, final Map< Spot, UUID > spotUuids )
+	{
+		for ( final Spot spot : model.getGraph().vertices() )
+			if ( !spotUuids.containsKey( spot ) )
+				spotUuids.put( spot, UUID.randomUUID() );
+	}
+
+	private static < T extends PoolObject< T, ?, ? > > void fillIndex( final PoolCollectionWrapper< T > collection, final Index< T > ids )
+	{
+		for ( final T object : collection )
+			ids.getOrCreateId( object );
+	}
+
+	private static void fillLabelIndex( final PoolCollectionWrapper< Spot > spots, final TObjectIntMap< String > labelIndex )
+	{
+		// fixme make sure that label indices are unique
+		for ( final Spot spot : spots )
 		{
-			for ( Spot spot : spots )
+			final String label = spot.getLabel();
+			if ( !labelIndex.containsKey( label ) )
+				labelIndex.put( label, labelIndex.size() );
+		}
+	}
+
+	private static void writeSpotLabels( final File folder, final TObjectIntMap< String > labelIndex ) throws IOException
+	{
+		// FIXME: benchmark and optimize
+		final TIntIterator iterator = labelIndex.valueCollection().iterator();
+		int maxId = -1;
+		while ( iterator.hasNext() )
+			maxId = Math.max( maxId, iterator.next() );
+		final List< String > labels = new ArrayList<>( maxId + 1 );
+		for ( int i = 0; i <= maxId; i++ )
+			labels.add( null );
+		labelIndex.forEachEntry( ( label, id ) -> {
+			labels.set( id, label );
+			return true;
+		} );
+
+		for ( int j = 0; j <= maxId; j += 1000 )
+		{
+			final File labels_raw = new File( folder, j + ".raw" );
+			try (final DataOutputStream out = new DataOutputStream( new BufferedOutputStream( new FileOutputStream( labels_raw ) ) ))
 			{
-				out.writeInt( spot.getInternalPoolIndex() );
-				out.writeUTF( spot.getLabel() );
+				final int limit = Math.min( j + 1000, maxId );
+				for ( int id = j; id < limit; id++ )
+				{
+					final String label = labels.get( id );
+					if ( label == null )
+						continue;
+					out.writeInt( id );
+					out.writeUTF( label );
+				}
 			}
 		}
 	}
@@ -64,23 +184,25 @@ public class MasgitoffIo
 		return spotsDirectory;
 	}
 
-	private static < T extends PoolObject< T, ?, ? > > void writeRawTable( final File directory, final RefList< T > spotOrLinks,
+	private static < T extends PoolObject< T, ?, ? > > void writeRawTable( final File directory, final Index< T > spotOrLinks,
 			final Serializer< T > preserializer, final PoolObjectAttributeSerializer< T > serializer ) throws IOException
 	{
 		final T ref = spotOrLinks.createRef();
 		final byte[] bytes = new byte[ serializer.getNumBytes() ];
-		for ( int j = 0; j < spotOrLinks.size(); j += 1000 )
+		final int size = spotOrLinks.getMaxId() + 1;
+		for ( int j = 0; j < size; j += 1000 )
 		{
 			final File spots_raw = new File( directory, j + ".raw" );
 			try (final DataOutputStream out = new DataOutputStream( new BufferedOutputStream( new FileOutputStream( spots_raw ) ) ))
 			{
-				final int limit = Math.min( j + 1000, spotOrLinks.size() );
-				for ( int k = j; k < limit; k++ )
+				final int limit = Math.min( j + 1000, size );
+				for ( int id = j; id < limit; id++ )
 				{
-					final T spotOrLink = spotOrLinks.get( k, ref );
-					if ( spotOrLink.getInternalPoolIndex() == -1 )
+					final T spotOrLink = spotOrLinks.getObject( id, ref );
+					if ( spotOrLink == null )
 						continue;
-					preserializer.serialize( spotOrLink, out );
+					out.writeInt( id );
+					preserializer.serialize( id, spotOrLink, out );
 					serializer.getBytes( spotOrLink, bytes );
 					out.write( bytes );
 				}
@@ -93,15 +215,29 @@ public class MasgitoffIo
 		final ModelGraph graph = new ModelGraph();
 		final Spot ref = graph.vertices().createRef();
 		final ModelSerializer instance = ModelSerializer.getInstance();
-		read( new File( file, "spots" ), instance.getVertexSerializer(), ( in ) -> graph.addVertex( ref ) );
+		final MasgitoffIds masgitoffIds = new MasgitoffIds( graph );
+		final Index< Spot > spotIndex = masgitoffIds.getSpotIndex();
+		// FIXME: read labels
+		// FIXME: read labelsets
+		read( new File( file, "spots" ), instance.getVertexSerializer(), ( in ) -> {
+			final int id = in.readInt();
+			final UUID uuid = new UUID( in.readLong(), in.readLong() );
+			final int labelId = in.readInt();
+			final int tagId = in.readInt();
+			final Spot spot = graph.addVertex( ref );
+			spotIndex.put( spot, id );
+			return spot;
+		} );
 		final Spot ref1 = graph.vertexRef();
 		final Spot ref2 = graph.vertexRef();
 		final Link ref3 = graph.edgeRef();
 		read( new File( file, "links" ), instance.getEdgeSerializer(), ( in ) -> {
-			final Spot source = graph.vertices().getRefPool().getObject( in.readInt(), ref1 );
-			final Spot target = graph.vertices().getRefPool().getObject( in.readInt(), ref2 );
+			final int id = in.readInt();
+			final Spot source = spotIndex.getObject( in.readInt(), ref1 );
+			final Spot target = spotIndex.getObject( in.readInt(), ref2 );
 			final int sourceOutIndex = in.readInt();
 			final int targetInIndex = in.readInt();
+			final int tagId = in.readInt();
 			return graph.insertEdge( source, sourceOutIndex, target, targetInIndex, ref3 );
 		} );
 		return graph;
@@ -143,7 +279,7 @@ public class MasgitoffIo
 
 	private interface Serializer< T >
 	{
-		void serialize( T object, DataOutputStream out ) throws IOException;
+		void serialize( int id, T object, DataOutputStream out ) throws IOException;
 	}
 
 	private interface Deserializer< T >

@@ -200,13 +200,13 @@ public class ModelAsserts
 				line.append( "->" );
 				line.append( spotToString( target ) );
 				line.append( ":" );
-				lines.add( line.toString() );
 				for ( int i = 0; i < edgeTags.size(); i++ )
 				{
 					TagSetStructure.Tag tag = edgeTags.get( i ).get( link );
 					if ( tag != null )
 						line.append( " " ).append( i ).append( "=" ).append( tag.label() );
 				}
+				line.append( "\n" );
 				lines.add( line.toString() );
 			}
 			Collections.sort( lines );

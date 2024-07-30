@@ -18,7 +18,7 @@ import gnu.trove.map.TObjectIntMap;
 public class MasgitoffIo
 {
 
-	static void writeMasgitoff( final Model model, final File file, final MasgitoffIds masgitoffIds ) throws IOException
+	public static void writeMasgitoff( final Model model, final File file, final MasgitoffIds masgitoffIds ) throws IOException
 	{
 		if ( !file.mkdir() )
 			throw new RuntimeException( "Could not create directory " + file.getAbsolutePath() );

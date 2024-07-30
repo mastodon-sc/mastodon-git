@@ -34,7 +34,7 @@ public class TestGit
 
 			final GrowingGraphExample example = new GrowingGraphExample( context );
 			final ProjectModel growingProjectModel = example.getProject();
-			final Saver saver = new DefaultSaver( growingProjectModel, GIT_REPO_FOLDER.resolve( MASTODON_PROJECT_FILENAME ) );
+			final Saver saver = new MasgitoffSaver( growingProjectModel, GIT_REPO_FOLDER.resolve( MASTODON_PROJECT_FILENAME ) );
 			double saveSeconds = 0;
 			double gitSeconds = 0;
 

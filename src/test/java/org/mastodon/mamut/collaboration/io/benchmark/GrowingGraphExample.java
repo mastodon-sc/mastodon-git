@@ -67,12 +67,12 @@ class GrowingGraphExample
 
 	public boolean hasNext()
 	{
-		return copier.hasNextSpot() && getCompletion() < 25;
+		return copier.hasNextSpot();// && getCompletion() < 25;
 	}
 
 	public void grow()
 	{
-		for ( int i = 0; i < 1000 && copier.hasNextSpot(); i++ )
+		for ( int i = 0; i < 900 && copier.hasNextSpot(); i++ )
 			copier.copyNextSpot();
 	}
 

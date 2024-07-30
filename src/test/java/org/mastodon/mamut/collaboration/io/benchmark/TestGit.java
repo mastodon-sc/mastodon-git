@@ -9,6 +9,7 @@ import net.imglib2.util.StopWatch;
 
 import org.apache.commons.io.FileUtils;
 import org.mastodon.mamut.ProjectModel;
+import org.mastodon.mamut.collaboration.io.MasgitoffIo;
 import org.scijava.Context;
 
 import mpicbg.spim.data.SpimDataException;
@@ -34,7 +35,7 @@ public class TestGit
 		{
 			initGit();
 
-			final GrowingGraphExample example = new SimpleGrowingGraphExample( context );
+			final GrowingGraphExample example = new AddDeleteGrowingGraphExample( context );
 			final ProjectModel growingProjectModel = example.getProject();
 			final Saver saver = new MasgitoffSaver( growingProjectModel, GIT_REPO_FOLDER.resolve( MASTODON_PROJECT_FILENAME ) );
 			double saveSeconds = 0;
@@ -66,6 +67,7 @@ public class TestGit
 			System.out.println( "Mastodon project size: " + FileUtils.sizeOfDirectory( GIT_REPO_FOLDER.resolve( MASTODON_PROJECT_FILENAME ).toFile() ) / BYTES_PER_MB + " MB" );
 			System.out.println( "Time save: " + saveSeconds );
 			System.out.println( "Time git: " + gitSeconds );
+			example.assertEqualsOriginal( MasgitoffIo.readMasgitoff( GIT_REPO_FOLDER.resolve( MASTODON_PROJECT_FILENAME ).toFile() ) );
 		}
 	}
 

@@ -5,8 +5,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.mastodon.mamut.ProjectModel;
+import org.mastodon.mamut.collaboration.utils.ModelAsserts;
 import org.mastodon.mamut.io.ProjectLoader;
 import org.mastodon.mamut.model.Link;
+import org.mastodon.mamut.model.Model;
 import org.mastodon.mamut.model.ModelGraph;
 import org.mastodon.mamut.model.Spot;
 import org.scijava.Context;
@@ -62,5 +64,11 @@ class SimpleGrowingGraphExample implements GrowingGraphExample
 	public ProjectModel getProject()
 	{
 		return growingProject;
+	}
+
+	@Override
+	public void assertEqualsOriginal( Model model )
+	{
+		ModelAsserts.assertGraphEquals( fullGraph, model.getGraph() );
 	}
 }

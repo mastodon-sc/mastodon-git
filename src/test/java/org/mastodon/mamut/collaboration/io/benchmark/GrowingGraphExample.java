@@ -2,6 +2,7 @@ package org.mastodon.mamut.collaboration.io.benchmark;
 
 import org.mastodon.mamut.ProjectModel;
 import org.mastodon.mamut.model.Link;
+import org.mastodon.mamut.model.Model;
 import org.mastodon.mamut.model.ModelGraph;
 import org.mastodon.mamut.model.Spot;
 
@@ -35,4 +36,6 @@ public interface GrowingGraphExample
 	void grow();
 
 	ProjectModel getProject();
+
+	void assertEqualsOriginal( Model model );
 }

@@ -52,7 +52,7 @@ public class MasgitoffIo
 		}, ModelSerializer.getInstance().getVertexSerializer() );
 	}
 
-	private static void writeLinkTable( final File file, final Index< Link > linkIndex, final Index< Spot > spotIndex, final Spot ref, ToIntFunction< Link > linkToTagId ) throws IOException
+	private static void writeLinkTable( final File file, final Index< Link > linkIndex, final Index< Spot > spotIndex, final Spot ref, final ToIntFunction< Link > linkToTagId ) throws IOException
 	{
 		TableIo.writeRawTable( createSubDirectory( file, "links" ), linkIndex, ( id, link, out ) -> {
 			out.writeInt( spotIndex.getId( link.getSource( ref ) ) );
@@ -79,7 +79,7 @@ public class MasgitoffIo
 		return model;
 	}
 
-	private static void readSpots( final File spotsFolder, final ModelGraph graph, final List< String > labelIndex, final Index< Spot > spotIndex, TagIo.TagReader< Spot > spotTagReader )
+	private static void readSpots( final File spotsFolder, final ModelGraph graph, final List< String > labelIndex, final Index< Spot > spotIndex, final TagIo.TagReader< Spot > spotTagReader )
 			throws IOException
 	{
 		final Spot ref = graph.vertices().createRef();

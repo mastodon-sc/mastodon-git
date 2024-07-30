@@ -48,6 +48,10 @@ class AddDeleteGrowingGraphExample implements GrowingGraphExample
 
 	private final double[][] cov = new double[ 3 ][ 3 ];
 
+	private static final int ADDITIONS_PER_STEP = 900;
+
+	private static final int DELETIONS_PER_STEP = 100;
+
 	private boolean first = true;
 
 	public AddDeleteGrowingGraphExample( final Context context ) throws SpimDataException, IOException
@@ -61,10 +65,6 @@ class AddDeleteGrowingGraphExample implements GrowingGraphExample
 		growingGraph = growingProject.getModel().getGraph();
 		mapFG = new RefRefHashMap<>( fullGraph.vertices().getRefPool(), growingGraph.vertices().getRefPool() );
 		growCandidates = new RefSetImp<>( fullGraph.edges().getRefPool() );
-		for ( final Spot spot : fullGraph.vertices() )
-			if ( spot.incomingEdges().isEmpty() )
-				for ( final Link link : spot.outgoingEdges() )
-					growCandidates.add( link );
 		shrinkCandidates = new RefSetImp<>( fullGraph.edges().getRefPool() );
 	}
 
@@ -87,7 +87,7 @@ class AddDeleteGrowingGraphExample implements GrowingGraphExample
 			if ( sourceG == null && source.incomingEdges().isEmpty() )
 				sourceG = copySpot( source, vrefG1 );
 			targetG = copySpot( target, vrefG2 );
-			growingGraph.addEdge( sourceG, targetG, erefG ).init();
+			growingGraph.insertEdge( sourceG, link.getSourceOutIndex(), targetG, link.getTargetInIndex(), erefG ).init();
 			growCandidates.remove( link );
 			shrinkCandidates.add( link );
 			return true;
@@ -182,7 +182,7 @@ class AddDeleteGrowingGraphExample implements GrowingGraphExample
 			copyIsolatedSpots();
 		}
 
-		for ( int i = 0; i < 900; )
+		for ( int i = 0; i < ADDITIONS_PER_STEP; )
 		{
 			if ( growCandidates.isEmpty() )
 			{
@@ -195,7 +195,7 @@ class AddDeleteGrowingGraphExample implements GrowingGraphExample
 				i++;
 		}
 
-		for ( int i = 0; i < 100; )
+		for ( int i = 0; i < DELETIONS_PER_STEP; )
 		{
 			if ( shrinkCandidates.isEmpty() )
 				break;

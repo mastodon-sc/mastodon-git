@@ -24,8 +24,8 @@ public class TestGit
 
 	public static void main( final String... args ) throws SpimDataException, IOException
 	{
-		// FIXME: make the test more realistic by also removing spots in between
 		// FIXME: make the test more realistic by forcing a reopening of the project
+		// FIXME: make sure the graph has the tags as well
 		run();
 	}
 
@@ -68,6 +68,7 @@ public class TestGit
 			System.out.println( "Time save: " + saveSeconds );
 			System.out.println( "Time git: " + gitSeconds );
 			example.assertEqualsOriginal( MasgitoffIo.readMasgitoff( GIT_REPO_FOLDER.resolve( MASTODON_PROJECT_FILENAME ).toFile() ) );
+			System.out.println( "works!" );
 		}
 	}
 

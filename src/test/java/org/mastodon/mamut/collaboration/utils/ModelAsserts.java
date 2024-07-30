@@ -104,9 +104,7 @@ public class ModelAsserts
 
 	private static String spotToString( Spot spot )
 	{
-		String label = spot.getLabel();
-		if ( label.equals( Integer.toString( spot.getInternalPoolIndex() ) ) )
-			label = "<null>";
+		String label = spot.isLabelSet() ? spot.getLabel() : "<null>";
 		int timepoint = spot.getTimepoint();
 		double[] position = new double[ 3 ];
 		spot.localize( position );

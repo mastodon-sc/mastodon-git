@@ -47,7 +47,7 @@ public class MasgitoffIo
 			final UUID uuid = uuids.get( spot );
 			out.writeLong( uuid.getLeastSignificantBits() );
 			out.writeLong( uuid.getMostSignificantBits() );
-			out.writeInt( labelIndex.get( spot.getLabel() ) );
+			out.writeInt( spot.isLabelSet() ? labelIndex.get( spot.getLabel() ) : -1 );
 			out.writeInt( spotToTagId.applyAsInt( spot ) );
 		}, ModelSerializer.getInstance().getVertexSerializer() );
 	}
@@ -90,7 +90,7 @@ public class MasgitoffIo
 			final int tagId = in.readInt();
 			final Spot spot = graph.addVertex( ref );
 			if ( labelId >= 0 )
-				ref.setLabel( labelIndex.get( labelId ) );
+				spot.setLabel( labelIndex.get( labelId ) );
 			spotIndex.put( spot, id );
 			spotTagReader.assignTagId( spot, tagId );
 			return spot;

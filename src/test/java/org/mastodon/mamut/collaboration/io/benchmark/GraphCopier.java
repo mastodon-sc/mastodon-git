@@ -53,7 +53,8 @@ class GraphCopier implements AutoCloseable
 		spotA.getCovariance( cov );
 		final Spot spotB = target.addVertex( refB );
 		spotB.init( timepoint, position, cov );
-		spotB.setLabel( spotA.getLabel() );
+		if ( spotA.isLabelSet() )
+			spotB.setLabel( spotA.getLabel() );
 		mapAB.put( spotA, spotB );
 		for ( final Link sLink : spotA.incomingEdges() )
 		{

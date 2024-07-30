@@ -23,6 +23,8 @@ public class TestGit
 
 	public static void main( final String... args ) throws SpimDataException, IOException
 	{
+		// FIXME: make the test more realistic by also removing spots in between
+		// FIXME: make the test more realistic by forcing a reopening of the project
 		run();
 	}
 
@@ -32,7 +34,7 @@ public class TestGit
 		{
 			initGit();
 
-			final GrowingGraphExample example = new GrowingGraphExample( context );
+			final GrowingGraphExample example = new SimpleGrowingGraphExample( context );
 			final ProjectModel growingProjectModel = example.getProject();
 			final Saver saver = new MasgitoffSaver( growingProjectModel, GIT_REPO_FOLDER.resolve( MASTODON_PROJECT_FILENAME ) );
 			double saveSeconds = 0;

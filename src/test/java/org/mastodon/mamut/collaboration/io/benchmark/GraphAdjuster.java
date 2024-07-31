@@ -151,22 +151,6 @@ public class GraphAdjuster
 					spotsAtoB.put( spotA, spotB );
 			}
 		}
-
-//		final ExactPositionToSpotIndex index = new ExactPositionToSpotIndex( modelA.getGraph().vertices().getRefPool() );
-//		for ( final Spot spotA : modelA.getGraph().vertices() )
-//			index.put( spotA );
-//
-//		final Spot ref = modelA.getGraph().vertexRef();
-//		for ( final Spot spotB : modelB.getGraph().vertices() )
-//		{
-//			final Spot spotA = index.get( spotB, ref );
-//			if ( spotA == null )
-//				continue;
-//			final boolean same = spotEquals( spotB, spotA );
-//			if ( same )
-//				spotsAtoB.put( spotA, spotB );
-//		}
-
 	}
 
 	private boolean spotEquals( final Spot a, final Spot b )

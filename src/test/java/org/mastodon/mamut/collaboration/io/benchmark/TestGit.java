@@ -10,6 +10,7 @@ import net.imglib2.util.StopWatch;
 import org.apache.commons.io.FileUtils;
 import org.mastodon.mamut.ProjectModel;
 import org.mastodon.mamut.collaboration.io.MasgitoffIo;
+import org.mastodon.mamut.io.ProjectLoader;
 import org.scijava.Context;
 
 import mpicbg.spim.data.SpimDataException;
@@ -36,7 +37,7 @@ public class TestGit
 			initGit();
 
 			final GrowingGraphExample example = new AddDeleteGrowingGraphExample( context );
-			final ProjectModel growingProjectModel = example.getProject();
+			final ProjectModel growingProjectModel = ProjectLoader.open( AddDeleteGrowingGraphExample.empty, context );
 			final Saver saver = new MasgitoffSaver( growingProjectModel, GIT_REPO_FOLDER.resolve( MASTODON_PROJECT_FILENAME ) );
 			double saveSeconds = 0;
 			double gitSeconds = 0;
@@ -44,23 +45,16 @@ public class TestGit
 			while ( example.hasNext() )
 			{
 				System.out.println( "Completion: " + example.getCompletion() + "%" );
-				example.grow();
 
-				final StopWatch saveStopWatch = StopWatch.createAndStart();
+				final StopWatch growTime = measureTime( () -> example.grow( growingProjectModel ) );
+				final StopWatch saveTime = measureTime( () -> saver.save() );
+				final StopWatch gitTime = measureTime( () -> commit( "text" + growingProjectModel.getModel().getGraph().vertices().size(), MASTODON_PROJECT_FILENAME ) );
 
-				saver.save();
-
-				saveStopWatch.stop();
-				System.out.println( "time to save: " + saveStopWatch );
-				saveSeconds += saveStopWatch.seconds();
-
-				final StopWatch gitStopWatch = StopWatch.createAndStart();
-
-				commit( "text" + growingProjectModel.getModel().getGraph().vertices().size(), MASTODON_PROJECT_FILENAME );
-
-				gitStopWatch.stop();
-				System.out.println( "time to run git: " + gitStopWatch );
-				gitSeconds += gitStopWatch.seconds();
+				System.out.println( "time to grow the graph: " + growTime );
+				System.out.println( "time to save: " + saveTime );
+				System.out.println( "time to run git: " + gitTime );
+				gitSeconds += gitTime.seconds();
+				saveSeconds += saveTime.seconds();
 			}
 			System.out.println( "done" );
 			System.out.println( "History size: " + FileUtils.sizeOfDirectory( GIT_REPO_FOLDER.resolve( ".git/" ).toFile() ) / BYTES_PER_MB + " MB" );
@@ -70,6 +64,19 @@ public class TestGit
 			example.assertEqualsOriginal( MasgitoffIo.readMasgitoff( GIT_REPO_FOLDER.resolve( MASTODON_PROJECT_FILENAME ).toFile() ) );
 			System.out.println( "works!" );
 		}
+	}
+
+	private static StopWatch measureTime( final MyRunnable runnable ) throws IOException
+	{
+		final StopWatch watch = StopWatch.createAndStart();
+		runnable.run();
+		watch.stop();
+		return watch;
+	}
+
+	interface MyRunnable
+	{
+		void run() throws IOException;
 	}
 
 	private static void initGit() throws IOException

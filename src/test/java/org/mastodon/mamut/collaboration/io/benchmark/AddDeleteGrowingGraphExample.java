@@ -1,8 +1,6 @@
 package org.mastodon.mamut.collaboration.io.benchmark;
 
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Random;
@@ -26,7 +24,7 @@ class AddDeleteGrowingGraphExample implements GrowingGraphExample
 {
 	private static final String original = "/home/arzt/Datasets/Mette/E2.mastodon";
 
-	private static final String empty = "/home/arzt/Datasets/Mette/empty.mastodon";
+	public static final String empty = "/home/arzt/Datasets/Mette/empty.mastodon";
 
 	private final Random random = new Random( 0 );
 
@@ -48,20 +46,18 @@ class AddDeleteGrowingGraphExample implements GrowingGraphExample
 
 	private final double[][] cov = new double[ 3 ][ 3 ];
 
-	private static final int ADDITIONS_PER_STEP = 900;
+	private static final int ADDITIONS_PER_STEP = 9000;
 
-	private static final int DELETIONS_PER_STEP = 100;
+	private static final int DELETIONS_PER_STEP = 1000;
 
 	private boolean first = true;
 
 	public AddDeleteGrowingGraphExample( final Context context ) throws SpimDataException, IOException
 	{
-		final Path open1 = Paths.get( original );
-		final ProjectModel fullProject = ProjectLoader.open( open1.toFile().getAbsolutePath(), context );
+		final ProjectModel fullProject = ProjectLoader.open( original, context );
 		fullGraph = fullProject.getModel().getGraph();
 		GrowingGraphExample.removeWrongEdges( fullProject.getModel().getGraph() );
-		final Path open = Paths.get( empty );
-		growingProject = ProjectLoader.open( open.toFile().getAbsolutePath(), context );
+		growingProject = ProjectLoader.open( empty, context );
 		growingGraph = growingProject.getModel().getGraph();
 		mapFG = new RefRefHashMap<>( fullGraph.vertices().getRefPool(), growingGraph.vertices().getRefPool() );
 		growCandidates = new RefSetImp<>( fullGraph.edges().getRefPool() );
@@ -174,25 +170,18 @@ class AddDeleteGrowingGraphExample implements GrowingGraphExample
 	}
 
 	@Override
-	public void grow()
+	public void grow( final ProjectModel model )
+	{
+		grow();
+		GraphAdjuster.adjust( growingProject.getModel(), model.getModel() );
+	}
+
+	private void grow()
 	{
 		if ( first )
 		{
 			first = false;
 			copyIsolatedSpots();
-		}
-
-		for ( int i = 0; i < ADDITIONS_PER_STEP; )
-		{
-			if ( growCandidates.isEmpty() )
-			{
-				if ( hasNext() )
-					throw new AssertionError( "There should always be grow candidates when there are spots to add.");
-				return;
-			}
-			final Link link = pseudoRandomlyPickFromSet( growCandidates );
-			if ( copyLink( link ) )
-				i++;
 		}
 
 		for ( int i = 0; i < DELETIONS_PER_STEP; )
@@ -201,6 +190,19 @@ class AddDeleteGrowingGraphExample implements GrowingGraphExample
 				break;
 			final Link link = pseudoRandomlyPickFromSet( shrinkCandidates );
 			if ( removeLink( link ) )
+				i++;
+		}
+
+		for ( int i = 0; i < ADDITIONS_PER_STEP; )
+		{
+			if ( growCandidates.isEmpty() )
+			{
+				if ( hasNext() )
+					throw new AssertionError( "There should always be grow candidates when there are spots to add.");
+				break;
+			}
+			final Link link = pseudoRandomlyPickFromSet( growCandidates );
+			if ( copyLink( link ) )
 				i++;
 		}
 	}
@@ -235,12 +237,6 @@ class AddDeleteGrowingGraphExample implements GrowingGraphExample
 			iterator.next();
 		}
 		return iterator.next();
-	}
-
-	@Override
-	public ProjectModel getProject()
-	{
-		return growingProject;
 	}
 
 	@Override

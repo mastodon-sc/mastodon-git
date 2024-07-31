@@ -33,9 +33,7 @@ public interface GrowingGraphExample
 
 	boolean hasNext();
 
-	void grow();
-
-	ProjectModel getProject();
+	void grow( ProjectModel growingProjectModel );
 
 	void assertEqualsOriginal( Model model );
 }

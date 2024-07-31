@@ -7,10 +7,8 @@ import java.nio.file.Paths;
 import org.mastodon.mamut.ProjectModel;
 import org.mastodon.mamut.collaboration.utils.ModelAsserts;
 import org.mastodon.mamut.io.ProjectLoader;
-import org.mastodon.mamut.model.Link;
 import org.mastodon.mamut.model.Model;
 import org.mastodon.mamut.model.ModelGraph;
-import org.mastodon.mamut.model.Spot;
 import org.scijava.Context;
 
 import mpicbg.spim.data.SpimDataException;
@@ -54,16 +52,11 @@ class SimpleGrowingGraphExample implements GrowingGraphExample
 	}
 
 	@Override
-	public void grow()
+	public void grow( ProjectModel model )
 	{
 		for ( int i = 0; i < 900 && copier.hasNextSpot(); i++ )
 			copier.copyNextSpot();
-	}
-
-	@Override
-	public ProjectModel getProject()
-	{
-		return growingProject;
+		GraphAdjuster.adjust( growingProject.getModel(), model.getModel() );
 	}
 
 	@Override

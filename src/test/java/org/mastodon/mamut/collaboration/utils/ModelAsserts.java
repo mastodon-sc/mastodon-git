@@ -2,12 +2,17 @@ package org.mastodon.mamut.collaboration.utils;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
+import org.apache.commons.io.FileUtils;
 import org.mastodon.mamut.model.Link;
 import org.mastodon.mamut.model.Model;
 import org.mastodon.mamut.model.ModelGraph;
@@ -67,13 +72,13 @@ public class ModelAsserts
 	 */
 	public static void assertGraphEquals( ModelGraph a, ModelGraph b )
 	{
-		assertEquals( spotsAsString( a ), spotsAsString( b ) );
-		assertEquals( adjacencyAsString( a ), adjacencyAsString( b ) );
+		assertStringEquals( spotsAsString( a ), spotsAsString( b ) );
+		assertStringEquals( adjacencyAsString( a ), adjacencyAsString( b ) );
 	}
 
 	private static void assertTagSetModelEquals( Model a, Model b )
 	{
-		assertEquals( tagSetModelAsString( a ), tagSetModelAsString( b ) );
+		assertStringEquals( tagSetModelAsString( a ), tagSetModelAsString( b ) );
 	}
 
 	private static String spotsAsString( ModelGraph graph )
@@ -214,6 +219,31 @@ public class ModelAsserts
 		{
 			model.getGraph().releaseRef( ref1 );
 			model.getGraph().releaseRef( ref2 );
+		}
+	}
+
+	private static void assertStringEquals( String expected, String actual )
+	{
+		int length = Math.max( expected.length(), actual.length() );
+		if ( length <= 200_000 )
+			assertEquals( expected, actual );
+		else
+		{
+			if ( Objects.equals( expected, actual ) )
+				return;
+			try
+			{
+				Path directory = Files.createTempDirectory( "assertion_error_strings_are_different" );
+				FileUtils.writeStringToFile( directory.resolve( "expected.txt" ).toFile(), expected );
+				FileUtils.writeStringToFile( directory.resolve( "actual.txt" ).toFile(), actual );
+				throw new AssertionError( "Two strings that where expected to be equal but are different. "
+						+ "The strings are very long so they where written into text files in: " + directory );
+			}
+			catch ( IOException e )
+			{
+				assertEquals( expected, actual );
+			}
+			// write expected and actual strings into the files
 		}
 	}
 }

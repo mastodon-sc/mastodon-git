@@ -10,9 +10,7 @@ import net.imglib2.util.StopWatch;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.mastodon.mamut.ProjectModel;
 import org.mastodon.mamut.collaboration.io.MasgitoffIo;
-import org.mastodon.mamut.io.ProjectLoader;
 import org.mastodon.mamut.model.Model;
 import org.scijava.Context;
 
@@ -28,8 +26,9 @@ public class TestGit
 
 	public static void main( final String... args ) throws SpimDataException, IOException
 	{
-		// FIXME: make the test more realistic by forcing a reopening of the project
 		// FIXME: make sure the graph has the tags as well
+		// FIXME: remove unused labels in the masgitoff file
+		// FIXME: remove unused label sets in the masgitoff file
 		run();
 	}
 

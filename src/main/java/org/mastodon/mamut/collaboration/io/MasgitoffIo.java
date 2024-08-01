@@ -1,5 +1,7 @@
 package org.mastodon.mamut.collaboration.io;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -45,9 +47,7 @@ public class MasgitoffIo
 		final Index< Spot > spotIndex = ids.getSpotIndex();
 		final TObjectIntMap< String > labelIndex = ids.getLabelIndex();
 		TableIo.writeRawTable( createSubDirectory( file, "spots" ), spotIndex, ( id, spot, out ) -> {
-			final UUID uuid = uuids.get( spot );
-			out.writeLong( uuid.getLeastSignificantBits() );
-			out.writeLong( uuid.getMostSignificantBits() );
+			writeUUID( out, uuids.get( spot ) );
 			out.writeInt( spot.isLabelSet() ? labelIndex.get( spot.getLabel() ) : -1 );
 			out.writeInt( spotToTagId.applyAsInt( spot ) );
 		}, ModelSerializer.getInstance().getVertexSerializer() );
@@ -87,7 +87,7 @@ public class MasgitoffIo
 		final Spot ref = graph.vertices().createRef();
 		TableIo.read( spotsFolder, ModelSerializer.getInstance().getVertexSerializer(), ( in ) -> {
 			final int id = in.readInt();
-			final UUID uuid = new UUID( in.readLong(), in.readLong() );
+			final UUID uuid = readUUID( in );
 			final int labelId = in.readInt();
 			final int tagId = in.readInt();
 			final Spot spot = graph.addVertex( ref );
@@ -129,4 +129,18 @@ public class MasgitoffIo
 			throw new RuntimeException( "Could not create directory " + spotsDirectory.getAbsolutePath() );
 		return spotsDirectory;
 	}
+
+	private static void writeUUID( final DataOutputStream out, final UUID uuid ) throws IOException
+	{
+		out.writeLong( uuid.getMostSignificantBits() );
+		out.writeLong( uuid.getLeastSignificantBits() );
+	}
+
+	private static UUID readUUID( final DataInputStream in ) throws IOException
+	{
+		final long mostSigBits = in.readLong();
+		final long leastSigBits = in.readLong();
+		return new UUID( mostSigBits, leastSigBits );
+	}
+
 }

@@ -5,6 +5,8 @@ import org.mastodon.RefPool;
 
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.map.TObjectIntMap;
+import gnu.trove.procedure.TObjectIntProcedure;
 
 public class Index< T extends Ref< T > >
 {
@@ -89,5 +91,32 @@ public class Index< T extends Ref< T > >
 
 	public T createRef() {
 		return pool.createRef();
+	}
+
+	public void forEach( IndexAction< T > action )
+	{
+		T ref = pool.createRef();
+		try
+		{
+			for ( int i = 0; i < idToPoolId.size(); i++ )
+			{
+				final int poolId = idToPoolId.get( i );
+				if ( poolId >= 0 )
+				{
+					final T obj = pool.getObject( poolId, ref );
+					if ( obj != null )
+						action.run( obj, i );
+				}
+			}
+		}
+		finally
+		{
+			pool.releaseRef( ref );
+		}
+	}
+
+	public interface IndexAction< T >
+	{
+		void run( T object, int index );
 	}
 }

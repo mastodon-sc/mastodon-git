@@ -76,7 +76,19 @@ public class MasgitoffIo
 		readSpots( new File( file, "spots" ), graph, labels, ids, spotTagReader );
 		final TagIo.TagReader< Link > linkTagReader = TagIo.createLinksTagReader( new File( file, "links_tag_lookup_table.raw" ), model );
 		readLinks( file, graph, ids, linkTagReader );
+		fillLabelIndex( ids, labels );
 		return Pair.of( model, ids );
+	}
+
+	private static void fillLabelIndex( final MasgitoffIds ids, final List< String > labels )
+	{
+		final TObjectIntMap< String > labelIndex = ids.getLabelIndex();
+		for ( int i = 0; i < labels.size(); i++ )
+		{
+			final String label = labels.get( i );
+			if ( label != null )
+				labelIndex.put( label, i );
+		}
 	}
 
 	private static void readSpots( final File spotsFolder, final ModelGraph graph, final List< String > labelIndex, final MasgitoffIds ids, final TagIo.TagReader< Spot > spotTagReader )

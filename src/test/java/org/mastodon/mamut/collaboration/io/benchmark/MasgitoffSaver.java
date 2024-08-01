@@ -5,33 +5,40 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.apache.commons.io.FileUtils;
-import org.mastodon.mamut.ProjectModel;
+import org.apache.commons.lang3.tuple.Pair;
 import org.mastodon.mamut.collaboration.io.MasgitoffIds;
 import org.mastodon.mamut.collaboration.io.MasgitoffIo;
 import org.mastodon.mamut.model.Model;
 
-public class MasgitoffSaver implements Saver
+public class MasgitoffSaver implements Saver< MasgitoffIds >
 {
-
-	private final ProjectModel projectModel;
 
 	private final Path path;
 
-	private final MasgitoffIds masgitoffIds;
-
-	public MasgitoffSaver( final ProjectModel projectModel, final Path path )
+	public MasgitoffSaver( final Path path )
 	{
-		this.projectModel = projectModel;
 		this.path = path;
-		this.masgitoffIds = new MasgitoffIds( projectModel.getModel().getGraph() );
 	}
 
 	@Override
-	public void save() throws IOException
+	public Pair< Model, MasgitoffIds > open() throws IOException
 	{
-		final Model model = projectModel.getModel();
+		return MasgitoffIo.readMasgitoff( path.toFile() );
+	}
+
+	@Override
+	public void save( final Model model, final MasgitoffIds details ) throws IOException
+	{
 		if ( Files.isDirectory( path ) )
 			FileUtils.deleteDirectory( path.toFile() );
-		MasgitoffIo.writeMasgitoff( model, path.toFile(), masgitoffIds );
+		MasgitoffIo.writeMasgitoff( model, path.toFile(), details );
+	}
+
+	@Override
+	public Pair< Model, MasgitoffIds > createEmpty()
+	{
+		final Model model = new Model();
+		final MasgitoffIds masgitoffIds = new MasgitoffIds( model.getGraph() );
+		return Pair.of( model, masgitoffIds );
 	}
 }

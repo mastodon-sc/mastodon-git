@@ -1,6 +1,5 @@
 package org.mastodon.mamut.collaboration.io.benchmark;
 
-import org.mastodon.mamut.ProjectModel;
 import org.mastodon.mamut.model.Link;
 import org.mastodon.mamut.model.Model;
 import org.mastodon.mamut.model.ModelGraph;
@@ -33,7 +32,7 @@ public interface GrowingGraphExample
 
 	boolean hasNext();
 
-	void grow( ProjectModel growingProjectModel );
+	void grow( Model growingProjectModel );
 
 	void assertEqualsOriginal( Model model );
 }

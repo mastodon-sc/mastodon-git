@@ -5,12 +5,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import net.imglib2.util.Cast;
 import net.imglib2.util.StopWatch;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.mastodon.mamut.ProjectModel;
 import org.mastodon.mamut.collaboration.io.MasgitoffIo;
 import org.mastodon.mamut.io.ProjectLoader;
+import org.mastodon.mamut.model.Model;
 import org.scijava.Context;
 
 import mpicbg.spim.data.SpimDataException;
@@ -30,25 +33,30 @@ public class TestGit
 		run();
 	}
 
-	private static void run() throws IOException, SpimDataException
+	private static < T > void run() throws IOException, SpimDataException
 	{
 		try (final Context context = new Context())
 		{
 			initGit();
 
 			final GrowingGraphExample example = new AddDeleteGrowingGraphExample( context );
-			final ProjectModel growingProjectModel = ProjectLoader.open( AddDeleteGrowingGraphExample.empty, context );
-			final Saver saver = new MasgitoffSaver( growingProjectModel, GIT_REPO_FOLDER.resolve( MASTODON_PROJECT_FILENAME ) );
+			final Saver< T > saver = Cast.unchecked( new MasgitoffSaver( GIT_REPO_FOLDER.resolve( MASTODON_PROJECT_FILENAME ) ) );
 			double saveSeconds = 0;
 			double gitSeconds = 0;
+			boolean first = true;
 
 			while ( example.hasNext() )
 			{
 				System.out.println( "Completion: " + example.getCompletion() + "%" );
 
-				final StopWatch growTime = measureTime( () -> example.grow( growingProjectModel ) );
-				final StopWatch saveTime = measureTime( () -> saver.save() );
-				final StopWatch gitTime = measureTime( () -> commit( "text" + growingProjectModel.getModel().getGraph().vertices().size(), MASTODON_PROJECT_FILENAME ) );
+				final StopWatch openTime = StopWatch.createAndStart();
+				final Pair< Model, T > modelAndDetails = first ? saver.createEmpty() : saver.open();
+				final Model model = modelAndDetails.getLeft();
+				first = false;
+				openTime.stop();
+				final StopWatch growTime = measureTime( () -> example.grow( model ) );
+				final StopWatch saveTime = measureTime( () -> saver.save( model, modelAndDetails.getRight() ) );
+				final StopWatch gitTime = measureTime( () -> commit( "text" + model.getGraph().vertices().size(), MASTODON_PROJECT_FILENAME ) );
 
 				System.out.println( "time to grow the graph: " + growTime );
 				System.out.println( "time to save: " + saveTime );
@@ -61,7 +69,7 @@ public class TestGit
 			System.out.println( "Mastodon project size: " + FileUtils.sizeOfDirectory( GIT_REPO_FOLDER.resolve( MASTODON_PROJECT_FILENAME ).toFile() ) / BYTES_PER_MB + " MB" );
 			System.out.println( "Time save: " + saveSeconds );
 			System.out.println( "Time git: " + gitSeconds );
-			example.assertEqualsOriginal( MasgitoffIo.readMasgitoff( GIT_REPO_FOLDER.resolve( MASTODON_PROJECT_FILENAME ).toFile() ) );
+			example.assertEqualsOriginal( MasgitoffIo.readMasgitoff( GIT_REPO_FOLDER.resolve( MASTODON_PROJECT_FILENAME ).toFile() ).getLeft() );
 			System.out.println( "works!" );
 		}
 	}

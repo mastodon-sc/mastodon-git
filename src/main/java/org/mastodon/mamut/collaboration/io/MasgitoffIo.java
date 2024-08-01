@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.ToIntFunction;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.mastodon.mamut.model.Link;
 import org.mastodon.mamut.model.Model;
 import org.mastodon.mamut.model.ModelGraph;
@@ -63,25 +64,26 @@ public class MasgitoffIo
 		}, ModelSerializer.getInstance().getEdgeSerializer() );
 	}
 
-	public static Model readMasgitoff( final File file ) throws IOException
+	public static Pair< Model, MasgitoffIds > readMasgitoff( final File file ) throws IOException
 	{
 		final Model model = new Model();
 		final ModelGraph graph = model.getGraph();
-		final MasgitoffIds masgitoffIds = new MasgitoffIds( graph );
-		final Index< Spot > spotIndex = masgitoffIds.getSpotIndex();
+		final MasgitoffIds ids = new MasgitoffIds( graph );
 		final List< String > labels = LabelIo.readStringsChunked( new File( file, "spots_labels" ) );
 		final TagSetStructure tagSetStructure = TagIo.readTagSetStructure( new File( file, "tagsetstructure.raw" ) );
 		model.getTagSetModel().setTagSetStructure( tagSetStructure );
 		final TagIo.TagReader< Spot > spotTagReader = TagIo.createSpotsTagReader( new File( file, "spots_tag_lookup_table.raw" ), model );
-		readSpots( new File( file, "spots" ), graph, labels, spotIndex, spotTagReader );
+		readSpots( new File( file, "spots" ), graph, labels, ids, spotTagReader );
 		final TagIo.TagReader< Link > linkTagReader = TagIo.createLinksTagReader( new File( file, "links_tag_lookup_table.raw" ), model );
-		readLinks( file, graph, spotIndex, linkTagReader );
-		return model;
+		readLinks( file, graph, ids, linkTagReader );
+		return Pair.of( model, ids );
 	}
 
-	private static void readSpots( final File spotsFolder, final ModelGraph graph, final List< String > labelIndex, final Index< Spot > spotIndex, final TagIo.TagReader< Spot > spotTagReader )
+	private static void readSpots( final File spotsFolder, final ModelGraph graph, final List< String > labelIndex, final MasgitoffIds ids, final TagIo.TagReader< Spot > spotTagReader )
 			throws IOException
 	{
+		final Index< Spot > spotIndex = ids.getSpotIndex();
+		final Map< Spot, UUID > uuids = ids.getSpotUuids();
 		final Spot ref = graph.vertices().createRef();
 		TableIo.read( spotsFolder, ModelSerializer.getInstance().getVertexSerializer(), ( in ) -> {
 			final int id = in.readInt();
@@ -92,14 +94,17 @@ public class MasgitoffIo
 			if ( labelId >= 0 )
 				spot.setLabel( labelIndex.get( labelId ) );
 			spotIndex.put( spot, id );
+			uuids.put( spot, uuid );
 			spotTagReader.assignTagId( spot, tagId );
 			return spot;
 		} );
 		spotTagReader.finish();
 	}
 
-	private static void readLinks( final File file, final ModelGraph graph, final Index< Spot > spotIndex, final TagIo.TagReader< Link > linkTagReader ) throws IOException
+	private static void readLinks( final File file, final ModelGraph graph, final MasgitoffIds ids, final TagIo.TagReader< Link > linkTagReader ) throws IOException
 	{
+		final Index< Spot > spotIndex = ids.getSpotIndex();
+		final Index< Link > linkIndex = ids.getLinkIndex();
 		final Spot ref1 = graph.vertexRef();
 		final Spot ref2 = graph.vertexRef();
 		final Link ref3 = graph.edgeRef();
@@ -112,6 +117,7 @@ public class MasgitoffIo
 			final int tagId = in.readInt();
 			final Link link = graph.insertEdge( source, sourceOutIndex, target, targetInIndex, ref3 );
 			linkTagReader.assignTagId( link, tagId );
+			linkIndex.put( link, id );
 			return link;
 		} );
 	}

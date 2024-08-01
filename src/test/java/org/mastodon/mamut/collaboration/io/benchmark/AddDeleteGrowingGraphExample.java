@@ -24,13 +24,9 @@ class AddDeleteGrowingGraphExample implements GrowingGraphExample
 {
 	private static final String original = "/home/arzt/Datasets/Mette/E2.mastodon";
 
-	public static final String empty = "/home/arzt/Datasets/Mette/empty.mastodon";
-
 	private final Random random = new Random( 0 );
 
 	private final ModelGraph fullGraph;
-
-	private final ProjectModel growingProject;
 
 	private final ModelGraph growingGraph;
 
@@ -50,6 +46,8 @@ class AddDeleteGrowingGraphExample implements GrowingGraphExample
 
 	private static final int DELETIONS_PER_STEP = 1000;
 
+	private final Model growingModel;
+
 	private boolean first = true;
 
 	public AddDeleteGrowingGraphExample( final Context context ) throws SpimDataException, IOException
@@ -57,8 +55,8 @@ class AddDeleteGrowingGraphExample implements GrowingGraphExample
 		final ProjectModel fullProject = ProjectLoader.open( original, context );
 		fullGraph = fullProject.getModel().getGraph();
 		GrowingGraphExample.removeWrongEdges( fullProject.getModel().getGraph() );
-		growingProject = ProjectLoader.open( empty, context );
-		growingGraph = growingProject.getModel().getGraph();
+		growingModel = new Model();
+		growingGraph = growingModel.getGraph();
 		mapFG = new RefRefHashMap<>( fullGraph.vertices().getRefPool(), growingGraph.vertices().getRefPool() );
 		growCandidates = new RefSetImp<>( fullGraph.edges().getRefPool() );
 		shrinkCandidates = new RefSetImp<>( fullGraph.edges().getRefPool() );
@@ -149,7 +147,7 @@ class AddDeleteGrowingGraphExample implements GrowingGraphExample
 		}
 	}
 
-	private void removeSpot( Spot spotF, Spot spotG )
+	private void removeSpot( final Spot spotF, final Spot spotG )
 	{
 		mapFG.remove( spotF );
 		growingGraph.remove( spotG );
@@ -170,10 +168,10 @@ class AddDeleteGrowingGraphExample implements GrowingGraphExample
 	}
 
 	@Override
-	public void grow( final ProjectModel model )
+	public void grow( final Model model )
 	{
 		grow();
-		GraphAdjuster.adjust( growingProject.getModel(), model.getModel() );
+		GraphAdjuster.adjust( growingModel, model );
 	}
 
 	private void grow()
@@ -240,7 +238,7 @@ class AddDeleteGrowingGraphExample implements GrowingGraphExample
 	}
 
 	@Override
-	public void assertEqualsOriginal( Model model )
+	public void assertEqualsOriginal( final Model model )
 	{
 		ModelAsserts.assertGraphEquals( fullGraph, model.getGraph() );
 	}

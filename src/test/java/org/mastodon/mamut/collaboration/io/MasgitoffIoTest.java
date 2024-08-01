@@ -34,7 +34,7 @@ public class MasgitoffIoTest
 			if ( file.isDirectory() )
 				FileUtils.deleteDirectory( file );
 			MasgitoffIo.writeMasgitoff( model, file, new MasgitoffIds( model.getGraph() ) );
-			final Model newModel = MasgitoffIo.readMasgitoff( file );
+			final Model newModel = MasgitoffIo.readMasgitoff( file ).getLeft();
 			ModelAsserts.assertModelEquals( model, newModel );
 		}
 	}

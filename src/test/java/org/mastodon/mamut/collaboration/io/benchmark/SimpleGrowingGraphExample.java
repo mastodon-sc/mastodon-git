@@ -52,11 +52,11 @@ class SimpleGrowingGraphExample implements GrowingGraphExample
 	}
 
 	@Override
-	public void grow( ProjectModel model )
+	public void grow( Model model )
 	{
 		for ( int i = 0; i < 900 && copier.hasNextSpot(); i++ )
 			copier.copyNextSpot();
-		GraphAdjuster.adjust( growingProject.getModel(), model.getModel() );
+		GraphAdjuster.adjust( growingProject.getModel(), model );
 	}
 
 	@Override

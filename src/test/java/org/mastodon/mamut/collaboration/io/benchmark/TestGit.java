@@ -27,7 +27,6 @@ public class TestGit
 	public static void main( final String... args ) throws SpimDataException, IOException
 	{
 		// FIXME: make sure the graph has the tags as well
-		// FIXME: remove unused labels in the masgitoff file
 		// FIXME: remove unused label sets in the masgitoff file
 		run();
 	}

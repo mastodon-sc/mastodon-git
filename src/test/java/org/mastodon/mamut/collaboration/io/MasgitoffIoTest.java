@@ -9,6 +9,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Function;
 
 import org.apache.commons.io.FileUtils;
@@ -27,6 +29,7 @@ import org.mastodon.util.TagSetUtils;
 import org.scijava.Context;
 
 import gnu.trove.map.TObjectIntMap;
+import gnu.trove.map.hash.TObjectIntHashMap;
 import mpicbg.spim.data.SpimDataException;
 
 public class MasgitoffIoTest
@@ -102,11 +105,38 @@ public class MasgitoffIoTest
 		return String.join( "\n", lines );
 	}
 
-	private String toString( TObjectIntMap< String > labelIndex )
+	private String toString( final TObjectIntMap< String > labelIndex )
 	{
 		final List< String > lines = new ArrayList<>();
 		labelIndex.forEachEntry( ( key, value ) -> lines.add( key + " -> " + value ) );
 		Collections.sort( lines );
 		return String.join( "\n", lines );
 	}
+
+	@Test
+	public void testUpdateStringIndex()
+	{
+		// NB: This test makes assumptions about what string gets which index.
+		// The test only gives predictable results because is uses TreeSet rather
+		// than HashSet. (A TreeSet has a predictable iteration order) And details
+		// about the implementation of updateStringIndex are known. The test might
+		// need to be updated if the updateStringIndex function is changed.
+		final TObjectIntMap< String > stringIndex = new TObjectIntHashMap<>();
+
+		MasgitoffIds.updateStringIndex( stringIndex, treeSet( "A", "B", "C" ) );
+		assertEquals( "A -> 0\nB -> 1\nC -> 2", toString( stringIndex ) );
+
+		MasgitoffIds.updateStringIndex( stringIndex, treeSet( "A", "C" ) );
+		assertEquals( "A -> 0\nC -> 2", toString( stringIndex ) );
+
+		MasgitoffIds.updateStringIndex( stringIndex, treeSet( "A", "C", "D", "F" ) );
+		assertEquals( "A -> 0\nC -> 2\nD -> 1\nF -> 3", toString( stringIndex ) );
+	}
+
+	@SafeVarargs
+	private static < T > Set< T > treeSet( final T... values )
+	{
+		return new TreeSet<>( Arrays.asList( values ) );
+	}
+
 }

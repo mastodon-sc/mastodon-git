@@ -113,7 +113,7 @@
 		<license.organizationName>Mastodon authors</license.organizationName>
 		<license.copyrightOwners>Matthias Arzt</license.copyrightOwners>
 
-		<mastodon.version>1.0.0-beta-30</mastodon.version>
+		<mastodon.version>1.0.0-beta-31-SNAPSHOT</mastodon.version>
 		<mastodon-tomancak.version>0.4.2</mastodon-tomancak.version>
 		<mastodon-collection.version>1.0.0-beta-26</mastodon-collection.version>
 

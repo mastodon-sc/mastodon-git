@@ -79,6 +79,10 @@ public class MastodonGitRepository
 
 	private static final PersistentCredentials credentials = new PersistentCredentials();
 
+	private static final String INITIAL_STATE_FOLDER = "mastodon.initial_state";
+
+	private static final String MASTODON_PROJECT_FOLDER = "mastodon.project";
+
 	private final ProjectModel projectModel;
 
 	private final File projectRoot;
@@ -109,30 +113,44 @@ public class MastodonGitRepository
 			throw new IllegalArgumentException( "Not a directory: " + directory );
 		if ( !isDirectoryEmpty( directory ) )
 			throw new IllegalArgumentException( "Directory not empty: " + directory );
-		final Git git = Git.cloneRepository()
+
+		try (final Git git = Git.cloneRepository()
 				.setURI( repositoryURL )
 				.setCredentialsProvider( credentials.getSingleUseCredentialsProvider() )
 				.setDirectory( directory )
-				.call();
-		final Path mastodonProjectPath = directory.toPath().resolve( "mastodon.project" );
-		if ( Files.exists( mastodonProjectPath ) )
-			throw new MastodonGitException( "The repository already contains a shared mastodon project: " + repositoryURL );
-		Files.createDirectory( mastodonProjectPath );
-		ProjectSaver.saveProject( mastodonProjectPath.toFile(), projectModel );
-		Files.copy( mastodonProjectPath.resolve( "gui.xml" ), mastodonProjectPath.resolve( "gui.xml_remote" ) );
-		Files.copy( mastodonProjectPath.resolve( "project.xml" ), mastodonProjectPath.resolve( "project.xml_remote" ) );
-		Files.copy( mastodonProjectPath.resolve( "dataset.xml.backup" ), mastodonProjectPath.resolve( "dataset.xml.backup_remote" ) );
+				.call())
+		{
+
+			final Path mastodonProjectPath = directory.toPath().resolve( MASTODON_PROJECT_FOLDER );
+			final Path initialStateFolder = directory.toPath().resolve( INITIAL_STATE_FOLDER );
+
+			if ( Files.exists( mastodonProjectPath ) || Files.exists( initialStateFolder ) )
+				throw new MastodonGitException( "The repository already contains a shared mastodon project: " + repositoryURL
+						+ "\nPlease specify an empty repository." );
+
+			Files.createDirectory( mastodonProjectPath );
+			Files.createDirectory( initialStateFolder );
+
+			addGitIgnoreFile( git, directory );
+
+			ProjectSaver.saveProject( mastodonProjectPath.toFile(), projectModel );
+			copyXmlsFromTo( mastodonProjectPath, initialStateFolder );
+			git.add().addFilepattern( INITIAL_STATE_FOLDER ).addFilepattern( MASTODON_PROJECT_FOLDER ).call();
+			git.commit().setMessage( "Share mastodon project" ).call();
+			git.push().setCredentialsProvider( credentials.getSingleUseCredentialsProvider() ).setRemote( "origin" ).call();
+			return new MastodonGitRepository( projectModel );
+		}
+	}
+
+	private static void addGitIgnoreFile( final Git git, final File directory ) throws IOException, GitAPIException
+	{
 		final Path gitignore = directory.toPath().resolve( ".gitignore" );
-		Files.write( gitignore, "/mastodon.project/gui.xml\n".getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND );
-		Files.write( gitignore, "/mastodon.project/project.xml\n".getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND );
-		Files.write( gitignore, "/mastodon.project/dataset.xml.backup\n".getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND );
+		final String gitignoreContent = "/mastodon.project/gui.xml\n"
+				+ "/mastodon.project/project.xml\n"
+				+ "/mastodon.project/dataset.xml.backup\n";
+		Files.write( gitignore, gitignoreContent.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND );
 		git.add().addFilepattern( ".gitignore" ).call();
 		git.commit().setMessage( "Add .gitignore file" ).call();
-		git.add().addFilepattern( "mastodon.project" ).call();
-		git.commit().setMessage( "Share mastodon project" ).call();
-		git.push().setCredentialsProvider( credentials.getSingleUseCredentialsProvider() ).setRemote( "origin" ).call();
-		git.close();
-		return new MastodonGitRepository( projectModel );
 	}
 
 	public File getProjectRoot()
@@ -161,11 +179,17 @@ public class MastodonGitRepository
 				.setDirectory( directory )
 				.call())
 		{
-			final Path mastodonProjectPath = directory.toPath().resolve( "mastodon.project" );
-			Files.copy( mastodonProjectPath.resolve( "gui.xml_remote" ), mastodonProjectPath.resolve( "gui.xml" ) );
-			Files.copy( mastodonProjectPath.resolve( "project.xml_remote" ), mastodonProjectPath.resolve( "project.xml" ) );
-			Files.copy( mastodonProjectPath.resolve( "dataset.xml.backup_remote" ), mastodonProjectPath.resolve( "dataset.xml.backup" ) );
+			final Path mastodonProjectPath = directory.toPath().resolve( MASTODON_PROJECT_FOLDER );
+			final Path remoteFolder = directory.toPath().resolve( INITIAL_STATE_FOLDER );
+			copyXmlsFromTo( remoteFolder, mastodonProjectPath );
 		}
+	}
+
+	private static void copyXmlsFromTo( final Path from, final Path to ) throws IOException
+	{
+		Files.copy( from.resolve( "gui.xml" ), to.resolve( "gui.xml" ) );
+		Files.copy( from.resolve( "project.xml" ), to.resolve( "project.xml" ) );
+		Files.copy( from.resolve( "dataset.xml.backup" ), to.resolve( "dataset.xml.backup" ) );
 	}
 
 	/**
@@ -173,7 +197,7 @@ public class MastodonGitRepository
 	 */
 	public static void openProjectInRepository( final Context context, final File directory ) throws Exception
 	{
-		final String mastodonFile = directory.toPath().resolve( "mastodon.project" ).toString();
+		final String mastodonFile = directory.toPath().resolve( MASTODON_PROJECT_FOLDER ).toString();
 		final boolean restoreGUIState = true;
 		final boolean authorizeSubstituteDummyData = true;
 		final ProjectModel newProject = ProjectLoader.open( mastodonFile, context, restoreGUIState, authorizeSubstituteDummyData );
@@ -187,7 +211,7 @@ public class MastodonGitRepository
 	{
 		try (final Git git = initGit())
 		{
-			git.add().addFilepattern( "mastodon.project" ).call();
+			git.add().addFilepattern( MASTODON_PROJECT_FOLDER ).call();
 			final CommitCommand commit = git.commit();
 			commit.setMessage( message );
 			commit.setAuthor( settingsService.getPersonIdent() );
@@ -480,7 +504,7 @@ public class MastodonGitRepository
 
 	private Git initGit() throws IOException
 	{
-		final boolean correctFolder = projectRoot.getName().equals( "mastodon.project" );
+		final boolean correctFolder = projectRoot.getName().equals( MASTODON_PROJECT_FOLDER );
 		if ( !correctFolder )
 			throw new MastodonGitException( "The current project does not appear to be in a git repo." );
 		final File gitRoot = projectRoot.getParentFile();

@@ -78,7 +78,7 @@ public class MastodonGitRepository
 
 	private static final PersistentCredentials credentials = new PersistentCredentials();
 
-	private static final String MASTODON_REMOTE_DATA_FOLDER = "mastodon.remote";
+	private static final String INITIAL_STATE_FOLDER = "mastodon.initial_state";
 
 	private static final String MASTODON_PROJECT_FOLDER = "mastodon.project";
 
@@ -122,13 +122,13 @@ public class MastodonGitRepository
 			throw new MastodonGitException( "The repository already contains a shared mastodon project: " + repositoryURL );
 		Files.createDirectory( mastodonProjectPath );
 
-		Path remoteFolder = directory.toPath().resolve( MASTODON_REMOTE_DATA_FOLDER );
-		if ( Files.exists( remoteFolder ) )
+		final Path initialStateFolder = directory.toPath().resolve( INITIAL_STATE_FOLDER );
+		if ( Files.exists( initialStateFolder ) )
 			throw new MastodonGitException( "The repository already contains a shared mastodon project: " + repositoryURL );
-		Files.createDirectory( remoteFolder );
+		Files.createDirectory( initialStateFolder );
 
 		ProjectSaver.saveProject( mastodonProjectPath.toFile(), projectModel );
-		copyXmlsFromTo( mastodonProjectPath, remoteFolder );
+		copyXmlsFromTo( mastodonProjectPath, initialStateFolder );
 		final Path gitignore = directory.toPath().resolve( ".gitignore" );
 
 		Files.write( gitignore, "/mastodon.project/gui.xml\n".getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND );
@@ -136,7 +136,7 @@ public class MastodonGitRepository
 		Files.write( gitignore, "/mastodon.project/dataset.xml.backup\n".getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND );
 		git.add().addFilepattern( ".gitignore" ).call();
 		git.commit().setMessage( "Add .gitignore file" ).call();
-		git.add().addFilepattern( MASTODON_REMOTE_DATA_FOLDER ).addFilepattern( MASTODON_PROJECT_FOLDER ).call();
+		git.add().addFilepattern( INITIAL_STATE_FOLDER ).addFilepattern( MASTODON_PROJECT_FOLDER ).call();
 		git.commit().setMessage( "Share mastodon project" ).call();
 		git.push().setCredentialsProvider( credentials.getSingleUseCredentialsProvider() ).setRemote( "origin" ).call();
 		git.close();
@@ -170,7 +170,7 @@ public class MastodonGitRepository
 				.call())
 		{
 			final Path mastodonProjectPath = directory.toPath().resolve( MASTODON_PROJECT_FOLDER );
-			final Path remoteFolder = directory.toPath().resolve( MASTODON_REMOTE_DATA_FOLDER );
+			final Path remoteFolder = directory.toPath().resolve( INITIAL_STATE_FOLDER );
 			copyXmlsFromTo( remoteFolder, mastodonProjectPath );
 		}
 	}

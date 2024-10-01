@@ -10,7 +10,7 @@
 
 	<groupId>org.mastodon</groupId>
 	<artifactId>mastodon-git</artifactId>
-	<version>0.0.2-SNAPSHOT</version>
+	<version>0.1.1-SNAPSHOT</version>
 
 	<name>Mastodon Git Collaboration Tools</name>
 	<description>A Mastodon plugin that allow to collaborate on a dataset via git.</description>

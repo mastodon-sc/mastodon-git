@@ -42,6 +42,7 @@ import org.eclipse.jgit.api.CreateBranchCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.ListBranchCommand;
 import org.eclipse.jgit.api.ResetCommand;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.BranchConfig;
 import org.eclipse.jgit.lib.ConfigConstants;
 import org.eclipse.jgit.lib.Ref;
@@ -112,35 +113,44 @@ public class MastodonGitRepository
 			throw new IllegalArgumentException( "Not a directory: " + directory );
 		if ( !isDirectoryEmpty( directory ) )
 			throw new IllegalArgumentException( "Directory not empty: " + directory );
-		final Git git = Git.cloneRepository()
+
+		try (final Git git = Git.cloneRepository()
 				.setURI( repositoryURL )
 				.setCredentialsProvider( credentials.getSingleUseCredentialsProvider() )
 				.setDirectory( directory )
-				.call();
-		final Path mastodonProjectPath = directory.toPath().resolve( MASTODON_PROJECT_FOLDER );
-		if ( Files.exists( mastodonProjectPath ) )
-			throw new MastodonGitException( "The repository already contains a shared mastodon project: " + repositoryURL );
-		Files.createDirectory( mastodonProjectPath );
+				.call())
+		{
 
-		final Path initialStateFolder = directory.toPath().resolve( INITIAL_STATE_FOLDER );
-		if ( Files.exists( initialStateFolder ) )
-			throw new MastodonGitException( "The repository already contains a shared mastodon project: " + repositoryURL );
-		Files.createDirectory( initialStateFolder );
+			final Path mastodonProjectPath = directory.toPath().resolve( MASTODON_PROJECT_FOLDER );
+			final Path initialStateFolder = directory.toPath().resolve( INITIAL_STATE_FOLDER );
 
-		ProjectSaver.saveProject( mastodonProjectPath.toFile(), projectModel );
-		copyXmlsFromTo( mastodonProjectPath, initialStateFolder );
+			if ( Files.exists( mastodonProjectPath ) || Files.exists( initialStateFolder ) )
+				throw new MastodonGitException( "The repository already contains a shared mastodon project: " + repositoryURL
+						+ "\nPlease specify an empty repository." );
+
+			Files.createDirectory( mastodonProjectPath );
+			Files.createDirectory( initialStateFolder );
+
+			addGitIgnoreFile( git, directory );
+
+			ProjectSaver.saveProject( mastodonProjectPath.toFile(), projectModel );
+			copyXmlsFromTo( mastodonProjectPath, initialStateFolder );
+			git.add().addFilepattern( INITIAL_STATE_FOLDER ).addFilepattern( MASTODON_PROJECT_FOLDER ).call();
+			git.commit().setMessage( "Share mastodon project" ).call();
+			git.push().setCredentialsProvider( credentials.getSingleUseCredentialsProvider() ).setRemote( "origin" ).call();
+			return new MastodonGitRepository( projectModel );
+		}
+	}
+
+	private static void addGitIgnoreFile( final Git git, final File directory ) throws IOException, GitAPIException
+	{
 		final Path gitignore = directory.toPath().resolve( ".gitignore" );
-
-		Files.write( gitignore, "/mastodon.project/gui.xml\n".getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND );
-		Files.write( gitignore, "/mastodon.project/project.xml\n".getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND );
-		Files.write( gitignore, "/mastodon.project/dataset.xml.backup\n".getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND );
+		final String gitignoreContent = "/mastodon.project/gui.xml\n"
+				+ "/mastodon.project/project.xml\n"
+				+ "/mastodon.project/dataset.xml.backup\n";
+		Files.write( gitignore, gitignoreContent.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND );
 		git.add().addFilepattern( ".gitignore" ).call();
 		git.commit().setMessage( "Add .gitignore file" ).call();
-		git.add().addFilepattern( INITIAL_STATE_FOLDER ).addFilepattern( MASTODON_PROJECT_FOLDER ).call();
-		git.commit().setMessage( "Share mastodon project" ).call();
-		git.push().setCredentialsProvider( credentials.getSingleUseCredentialsProvider() ).setRemote( "origin" ).call();
-		git.close();
-		return new MastodonGitRepository( projectModel );
 	}
 
 	public File getProjectRoot()

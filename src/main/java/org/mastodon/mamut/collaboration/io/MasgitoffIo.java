@@ -4,6 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.NoSuchFileException;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -73,6 +74,8 @@ public class MasgitoffIo
 
 	public static MasgitoffIds readMasgitoff( final Model emptyModel, final File file ) throws IOException
 	{
+		if ( !file.isDirectory() )
+			throw new NoSuchFileException( file.toString() );
 		final ModelGraph graph = emptyModel.getGraph();
 		final MasgitoffIds ids = new MasgitoffIds( graph );
 		final List< String > labels = LabelIo.readStringsChunked( new File( file, "spots_labels" ) );
@@ -83,6 +86,7 @@ public class MasgitoffIo
 		final TagIo.TagReader< Link > linkTagReader = TagIo.createLinksTagReader( new File( file, "links_tag_lookup_table.raw" ), emptyModel );
 		readLinks( file, graph, ids, linkTagReader );
 		fillLabelIndex( ids, labels );
+		MasgitoffIdsStore.put( emptyModel, ids );
 		return ids;
 	}
 

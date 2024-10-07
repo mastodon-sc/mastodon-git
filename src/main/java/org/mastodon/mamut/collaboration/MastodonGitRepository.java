@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -36,6 +36,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.CheckoutCommand;
 import org.eclipse.jgit.api.CommitCommand;
 import org.eclipse.jgit.api.CreateBranchCommand;
@@ -50,26 +51,23 @@ import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.lib.StoredConfig;
 import org.eclipse.jgit.transport.PushResult;
 import org.eclipse.jgit.transport.RemoteRefUpdate;
-import org.mastodon.graph.io.RawGraphIO;
 import org.mastodon.mamut.MainWindow;
 import org.mastodon.mamut.ProjectModel;
 import org.mastodon.mamut.collaboration.exceptions.MastodonGitException;
+import org.mastodon.mamut.collaboration.io.MasgitoffIdsStore;
+import org.mastodon.mamut.collaboration.io.MasgitoffIo;
+import org.mastodon.mamut.collaboration.io.MasgitoffProjectLoader;
+import org.mastodon.mamut.collaboration.io.MasgitoffProjectSaver;
 import org.mastodon.mamut.collaboration.settings.MastodonGitSettingsService;
 import org.mastodon.mamut.collaboration.utils.ConflictUtils;
 import org.mastodon.mamut.collaboration.utils.ReloadFromDiskUtils;
-import org.mastodon.mamut.feature.MamutRawFeatureModelIO;
-import org.mastodon.mamut.io.ProjectLoader;
-import org.mastodon.mamut.io.ProjectSaver;
 import org.mastodon.mamut.io.project.MamutProject;
-import org.mastodon.mamut.io.project.MamutProjectIO;
-import org.mastodon.mamut.model.Link;
 import org.mastodon.mamut.model.Model;
-import org.mastodon.mamut.model.Spot;
 import org.mastodon.mamut.collaboration.credentials.PersistentCredentials;
 import org.mastodon.mamut.collaboration.exceptions.GraphMergeConflictException;
 import org.mastodon.mamut.collaboration.exceptions.GraphMergeException;
-import org.mastodon.mamut.tomancak.merging.Dataset;
 import org.mastodon.mamut.tomancak.merging.MergeDatasets;
+import org.mastodon.mamut.tomancak.merging.MergeModels;
 import org.scijava.Context;
 
 // make it one synchronized class per repository
@@ -133,7 +131,7 @@ public class MastodonGitRepository
 
 			addGitIgnoreFile( git, directory );
 
-			ProjectSaver.saveProject( mastodonProjectPath.toFile(), projectModel );
+			MasgitoffProjectSaver.saveProject( mastodonProjectPath.toFile(), projectModel );
 			copyXmlsFromTo( mastodonProjectPath, initialStateFolder );
 			git.add().addFilepattern( INITIAL_STATE_FOLDER ).addFilepattern( MASTODON_PROJECT_FOLDER ).call();
 			git.commit().setMessage( "Share mastodon project" ).call();
@@ -200,7 +198,7 @@ public class MastodonGitRepository
 		final String mastodonFile = directory.toPath().resolve( MASTODON_PROJECT_FOLDER ).toString();
 		final boolean restoreGUIState = true;
 		final boolean authorizeSubstituteDummyData = true;
-		final ProjectModel newProject = ProjectLoader.open( mastodonFile, context, restoreGUIState, authorizeSubstituteDummyData );
+		final ProjectModel newProject = MasgitoffProjectLoader.open( mastodonFile, context, restoreGUIState, authorizeSubstituteDummyData );
 		new MainWindow( newProject ).setVisible( true );
 	}
 
@@ -211,12 +209,17 @@ public class MastodonGitRepository
 	{
 		try (final Git git = initGit())
 		{
-			git.add().addFilepattern( MASTODON_PROJECT_FOLDER ).call();
-			final CommitCommand commit = git.commit();
-			commit.setMessage( message );
-			commit.setAuthor( settingsService.getPersonIdent() );
-			commit.call();
+			commitWithoutSave( git, message );
 		}
+	}
+
+	private void commitWithoutSave( Git git, String message ) throws GitAPIException
+	{
+		git.add().addFilepattern( MASTODON_PROJECT_FOLDER ).call();
+		final CommitCommand commit = git.commit().setAll( true );
+		commit.setMessage( message );
+		commit.setAuthor( settingsService.getPersonIdent() );
+		commit.call();
 	}
 
 	/**
@@ -231,7 +234,9 @@ public class MastodonGitRepository
 	 */
 	public synchronized void commit( final String message ) throws Exception
 	{
-		ProjectSaver.saveProject( projectRoot, projectModel );
+		final boolean clean = isClean();
+		if ( clean )
+			throw new MastodonGitException( "There are no changes to commit." );
 		commitWithoutSave( message );
 	}
 
@@ -239,7 +244,7 @@ public class MastodonGitRepository
 	 * This method performs an operation similar to {@code "git push origin --set-upstream <current-branch>"}.
 	 *
 	 * @throws MastodonGitException if the push fails because the remote server has changes that the local
-	 * repository does not have. Or if the push fails for any other reason.
+	 *                              repository does not have. Or if the push fails for any other reason.
 	 */
 	public synchronized void push() throws Exception
 	{
@@ -383,19 +388,19 @@ public class MastodonGitRepository
 	 */
 	public synchronized void mergeBranch( final String selectedBranch ) throws Exception
 	{
-		final Context context = projectModel.getContext();
 		try (final Git git = initGit())
 		{
 			ensureClean( git, "merging" );
 			final String currentBranch = getCurrentBranch();
-			final Dataset dsA = new Dataset( projectRoot.getAbsolutePath() );
+			final Model dsA = loadModel( projectRoot );
 			git.checkout().setName( selectedBranch ).call();
-			final Dataset dsB = new Dataset( projectRoot.getAbsolutePath() );
+			final Model dsB = loadModel( projectRoot );
 			git.checkout().setName( currentBranch ).call();
 			git.merge().setCommit( false ).include( git.getRepository().exactRef( selectedBranch ) ).call(); // TODO selected branch, should not be a string but a ref instead
 			final MamutProject project = projectModel.getProject();
 			project.setProjectRoot( projectRoot );
-			mergeAndCommit( context, project, dsA, dsB, "Merge commit generated with Mastodon" );
+			merge( project, dsA, dsB );
+			commitWithoutSave( git, "Merge commit generated with Mastodon" );
 			reloadFromDisk();
 		}
 	}
@@ -407,7 +412,6 @@ public class MastodonGitRepository
 	 */
 	public synchronized void pull() throws Exception
 	{
-		final Context context = projectModel.getContext();
 		try (final Git git = initGit())
 		{
 			ensureClean( git, "pulling" );
@@ -422,7 +426,7 @@ public class MastodonGitRepository
 				{
 					final MamutProject project = projectModel.getProject();
 					project.setProjectRoot( projectRoot );
-					automaticMerge( context, project, projectRoot, git );
+					automaticMerge( project, projectRoot, git );
 				}
 			}
 			finally
@@ -433,17 +437,18 @@ public class MastodonGitRepository
 		}
 	}
 
-	private void automaticMerge( final Context context, final MamutProject project, final File projectRoot, final Git git )
+	private void automaticMerge( final MamutProject project, final File projectRoot, final Git git )
 	{
 		try
 		{
 			git.checkout().setAllPaths( true ).setStage( CheckoutCommand.Stage.OURS ).call();
-			final Dataset dsA = new Dataset( projectRoot.getAbsolutePath() );
+			final Model dsA = loadModel( projectRoot );
 			git.checkout().setAllPaths( true ).setStage( CheckoutCommand.Stage.THEIRS ).call();
-			final Dataset dsB = new Dataset( projectRoot.getAbsolutePath() );
+			final Model dsB = loadModel( projectRoot );
 			git.checkout().setAllPaths( true ).setStage( CheckoutCommand.Stage.OURS ).call();
 			final String commitMessage = "Automatic merge by Mastodon during pull";
-			mergeAndCommit( context, project, dsA, dsB, commitMessage );
+			merge( project, dsA, dsB );
+			commitWithoutSave( git, commitMessage );
 		}
 		catch ( final GraphMergeException e )
 		{
@@ -455,33 +460,35 @@ public class MastodonGitRepository
 		}
 	}
 
-	private void mergeAndCommit( final Context context, final MamutProject project, final Dataset datasetA, final Dataset datasetB, final String commitMessage ) throws Exception
+	private Model loadModel( File projectRoot ) throws IOException
 	{
-		final Model mergedModel = merge( datasetA, datasetB );
+		return MasgitoffIo.readMasgitoff( new File( projectRoot, "model" ) ).getLeft();
+	}
+
+	private static void merge( MamutProject project, Model modelA, Model modelB ) throws IOException
+	{
+		final Model mergedModel = merge( modelA, modelB );
 		if ( ConflictUtils.hasConflict( mergedModel ) )
 			throw new GraphMergeConflictException();
 		ConflictUtils.removeMergeConflictTagSets( mergedModel );
-		saveModel( context, mergedModel, project );
-		commitWithoutSave( commitMessage );
+		saveModel( mergedModel, project );
 	}
 
-	private static void saveModel( final Context context, final Model model, final MamutProject project ) throws IOException
+	private static void saveModel( final Model model, final MamutProject project ) throws IOException
 	{
-		try (final MamutProject.ProjectWriter writer = project.openForWriting())
-		{
-			MamutProjectIO.save( project, writer );
-			final RawGraphIO.GraphToFileIdMap< Spot, Link > idmap = model.saveRaw( writer );
-			MamutRawFeatureModelIO.serialize( context, model, idmap, writer );
-		}
+		File modelFolder = new File( project.getProjectRoot(), "model" );
+		if ( modelFolder.isDirectory() )
+			FileUtils.deleteDirectory( modelFolder );
+		MasgitoffIo.writeMasgitoff( model, modelFolder, MasgitoffIdsStore.get( model ) );
 	}
 
-	private static Model merge( final Dataset dsA, final Dataset dsB )
+	private static Model merge( final Model modelA, final Model modelB )
 	{
 		final MergeDatasets.OutputDataSet output = new MergeDatasets.OutputDataSet( new Model() );
 		final double distCutoff = 1000;
 		final double mahalanobisDistCutoff = 1;
 		final double ratioThreshold = 2;
-		MergeDatasets.merge( dsA, dsB, output, distCutoff, mahalanobisDistCutoff, ratioThreshold );
+		MergeModels.merge( modelA, modelB, output, distCutoff, mahalanobisDistCutoff, ratioThreshold );
 		return output.getModel();
 	}
 
@@ -568,7 +575,7 @@ public class MastodonGitRepository
 
 	private boolean isClean( final Git git ) throws Exception
 	{
-		ProjectSaver.saveProject( projectRoot, projectModel );
+		MasgitoffProjectSaver.saveProject( projectRoot, projectModel );
 		return git.status().call().isClean();
 	}
 }

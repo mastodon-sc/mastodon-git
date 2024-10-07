@@ -252,7 +252,7 @@ public class MasgitoffProjectSaver
 		{
 			MamutProjectIO.save( project, writer );
 			final Model model = appModel.getModel();
-			MasgitoffIo.writeMasgitoff( model, getModelFolder( project ), new MasgitoffIds( model.getGraph() ) );
+			MasgitoffIo.writeMasgitoff( model, getModelFolder( project ), MasgitoffIdsStore.get( model ) );
 			// Serialize feature model.
 			//MamutRawFeatureModelIO.serialize( appModel.getContext(), model, idmap, writer );
 			// Serialize GUI state.

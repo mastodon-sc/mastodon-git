@@ -32,12 +32,13 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 import org.mastodon.mamut.ProjectModel;
 import org.mastodon.mamut.collaboration.TestResources;
-import org.mastodon.mamut.io.ProjectLoader;
+import org.mastodon.mamut.collaboration.io.MasgitoffIo;
+import org.mastodon.mamut.collaboration.io.MasgitoffProjectLoader;
 import org.mastodon.mamut.model.Model;
 import org.scijava.Context;
 
@@ -50,7 +51,7 @@ public class ReloadFromDiskUtilsTest
 {
 
 	/**
-	 * This test opens a files "project1.mastodon" to "project6.mastodon" by copying
+	 * This test opens a files "project1.masgitoff" to "project6.masgitoff" by copying
 	 * them to a temporary directory and then reloading the model from disk.
 	 * It checks that the model is the same, if reloaded from disk, as if it was
 	 * freshly loaded from the project file.
@@ -63,17 +64,24 @@ public class ReloadFromDiskUtilsTest
 			Path tmp = Files.createTempDirectory( "test" );
 			Files.copy( TestResources.asPath( "reload/tiny-dataset.h5" ), tmp.resolve( "tiny-dataset.h5" ) );
 			Files.copy( TestResources.asPath( "reload/tiny-dataset.xml" ), tmp.resolve( "tiny-dataset.xml" ) );
-			Path projectFile = tmp.resolve( "project.mastodon" );
-			Files.copy( TestResources.asPath( "reload/project1.mastodon" ), projectFile );
-			ProjectModel open = ProjectLoader.open( projectFile.toString(), context );
-			for ( int i = 2; i <= 6; i++ )
+			Path projectFile = tmp.resolve( "project.masgitoff" );
+			copyDirectoryFromTo( TestResources.asPath( "reload/project1.masgitoff" ), projectFile );
+			ProjectModel open = MasgitoffProjectLoader.open( projectFile.toString(), context );
+			for ( int i = 1; i <= 6; i++ )
 			{
-				Path resource = TestResources.asPath( "reload/project" + i + ".mastodon" );
-				Files.copy( resource, projectFile, StandardCopyOption.REPLACE_EXISTING );
+				Path resource = TestResources.asPath( "reload/project" + i + ".masgitoff" );
+				copyDirectoryFromTo( resource, projectFile );
 				ReloadFromDiskUtils.reloadFromDisk( open );
-				Model expected = ModelIO.open( resource.toString() );
+				Model expected = MasgitoffIo.readMasgitoff( resource.resolve( "model" ).toFile() ).getLeft();
 				ModelAsserts.assertModelEquals( expected, open.getModel() );
 			}
 		}
+	}
+
+	private static void copyDirectoryFromTo( Path from, Path to ) throws IOException
+	{
+		if ( Files.isDirectory( from ) )
+			FileUtils.deleteDirectory( to.toFile() );
+		FileUtils.copyDirectory( from.toFile(), to.toFile() );
 	}
 }

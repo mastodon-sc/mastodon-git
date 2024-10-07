@@ -28,9 +28,11 @@
  */
 package org.mastodon.mamut.collaboration.utils;
 
+import java.io.File;
 import java.io.IOException;
 
 import org.mastodon.mamut.ProjectModel;
+import org.mastodon.mamut.collaboration.io.MasgitoffIo;
 import org.mastodon.mamut.io.importer.ModelImporter;
 import org.mastodon.mamut.io.project.MamutProject;
 import org.mastodon.mamut.model.Model;
@@ -55,12 +57,12 @@ public class ReloadFromDiskUtils
 	 */
 	public static void reloadFromDisk( ProjectModel projectModel ) throws IOException
 	{
+		Model model = projectModel.getModel();
 		try (
-				MamutProject.ProjectReader reader = projectModel.getProject().openForReading();
-				AutoClosableModelImporter ignored = new AutoClosableModelImporter( projectModel.getModel() ); // this pauses listeners and resets the undo history
+				AutoClosableModelImporter ignored = new AutoClosableModelImporter( model ); // this pauses listeners and resets the undo history
 		)
 		{
-			projectModel.getModel().loadRaw( reader );
+			MasgitoffIo.readMasgitoff( model, new File( projectModel.getProject().getProjectRoot(), "model" ) );
 		}
 	}
 

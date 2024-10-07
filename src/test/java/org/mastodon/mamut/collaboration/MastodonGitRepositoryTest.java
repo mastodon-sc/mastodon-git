@@ -43,6 +43,7 @@ import org.eclipse.jgit.api.Git;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mastodon.mamut.ProjectModel;
+import org.mastodon.mamut.collaboration.io.MasgitoffProjectLoader;
 import org.mastodon.mamut.collaboration.settings.MastodonGitSettingsService;
 import org.mastodon.mamut.collaboration.utils.ModelAsserts;
 import org.mastodon.mamut.collaboration.utils.ModelIO;
@@ -94,7 +95,7 @@ public class MastodonGitRepositoryTest
 			assertEquals( localRepo.resolve( "mastodon.project" ).toFile(), mgr.getProjectRoot() );
 			// Clone the repository to a new location.
 			MastodonGitRepository.cloneRepository( centralRepo.toString(), clonedRepo.toFile() );
-			final ProjectModel clonedProjectModel = ProjectLoader.open( clonedRepo.resolve( "mastodon.project" ).toString(), context2 );
+			final ProjectModel clonedProjectModel = MasgitoffProjectLoader.open( clonedRepo.resolve( "mastodon.project" ).toString(), context2 );
 			assertEquals( localRepo.resolve( "mastodon.project" ).toFile(), projectModel.getProject().getProjectRoot() );
 			assertEquals( clonedRepo.resolve( "mastodon.project" ).toFile(), clonedProjectModel.getProject().getProjectRoot() );
 			ModelAsserts.assertModelEquals( projectModel.getModel(), clonedProjectModel.getModel() );
@@ -151,7 +152,7 @@ public class MastodonGitRepositoryTest
 			// Clone the repository to a new location.
 			final Path clone = tempDirectory.resolve( "local-repo2" );
 			MastodonGitRepository.cloneRepository( centralRepo.toString(), clone.toFile() );
-			projectModel2 = ProjectLoader.open( clone.resolve( "mastodon.project" ).toString(), context2 );
+			projectModel2 = MasgitoffProjectLoader.open( clone.resolve( "mastodon.project" ).toString(), context2 );
 			repo2 = new MastodonGitRepository( projectModel2 );
 		}
 
@@ -162,7 +163,8 @@ public class MastodonGitRepositoryTest
 			projectModel2.close();
 			context1.dispose();
 			context2.dispose();
-			FileUtils.deleteDirectory( tempDirectory.toFile() );
+			System.out.println( "Deleting temp directory: " + tempDirectory );
+			//FileUtils.deleteDirectory( tempDirectory.toFile() );
 		}
 	}
 
@@ -365,7 +367,7 @@ public class MastodonGitRepositoryTest
 			// test that the commit was done in the correct repository
 			assertFalse( clean );
 			assertEquals( oldRoot, example.projectModel1.getProject().getProjectRoot() );
-			final ProjectModel reopened = ProjectLoader.open( oldRoot.toString(), example.context1 );
+			final ProjectModel reopened = MasgitoffProjectLoader.open( oldRoot.toString(), example.context1 );
 			assertTrue( hasSpot( reopened, "Hello World!" ) );
 			reopened.close();
 		}

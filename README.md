@@ -1,3 +1,5 @@
+[![Build Status](https://github.com/maarzt/mastodon-git/actions/workflows/build.yml/badge.svg)](https://github.com/maarzt/mastodon-git/actions/workflows/build.yml)
+
 # Mastodon Git Collaboration Tools
 
 A plugin for Mastodon that allows to work on a Mastodon dataset collaboratively with your colleagues.

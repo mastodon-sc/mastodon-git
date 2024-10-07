@@ -54,20 +54,16 @@ import org.jdom2.Element;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
 import org.mastodon.app.MastodonIcons;
-import org.mastodon.graph.io.RawGraphIO.GraphToFileIdMap;
 import org.mastodon.mamut.MainWindow;
 import org.mastodon.mamut.MamutViews;
 import org.mastodon.mamut.ProjectModel;
 import org.mastodon.mamut.WindowManager;
-import org.mastodon.mamut.feature.MamutRawFeatureModelIO;
 import org.mastodon.mamut.io.MamutViewStateXMLSerialization;
 import org.mastodon.mamut.io.project.MamutImagePlusProject;
 import org.mastodon.mamut.io.project.MamutProject;
 import org.mastodon.mamut.io.project.MamutProject.ProjectWriter;
 import org.mastodon.mamut.io.project.MamutProjectIO;
-import org.mastodon.mamut.model.Link;
 import org.mastodon.mamut.model.Model;
-import org.mastodon.mamut.model.Spot;
 import org.mastodon.mamut.views.MamutViewFactory;
 import org.mastodon.mamut.views.bdv.MamutViewBdv;
 import org.mastodon.ui.util.ExtensionFileFilter;
@@ -256,9 +252,9 @@ public class MasgitoffProjectSaver
 		{
 			MamutProjectIO.save( project, writer );
 			final Model model = appModel.getModel();
-			final GraphToFileIdMap< Spot, Link > idmap = model.saveRaw( writer );
+			MasgitoffIo.writeMasgitoff( model, getModelFolder( project ), new MasgitoffIds( model.getGraph() ) );
 			// Serialize feature model.
-			MamutRawFeatureModelIO.serialize( appModel.getContext(), model, idmap, writer );
+			//MamutRawFeatureModelIO.serialize( appModel.getContext(), model, idmap, writer );
 			// Serialize GUI state.
 			saveGUI( writer, appModel.getWindowManager() );
 			// Save a copy of the Spim Data Xml File
@@ -292,6 +288,14 @@ public class MasgitoffProjectSaver
 			if ( !alreadySaved.get() )
 				sbdv.saveSettings( settingsFile, null );
 		}
+	}
+
+	private static File getModelFolder( final MamutProject project )
+	{
+		final File projectRoot = project.getProjectRoot();
+		final String name = projectRoot.getName();
+		final File parentFile = projectRoot.getParentFile();
+		return new File( new File( parentFile, name + "_pending" ), "model" );
 	}
 
 	/**

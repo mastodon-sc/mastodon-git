@@ -67,17 +67,23 @@ public class MasgitoffIo
 	public static Pair< Model, MasgitoffIds > readMasgitoff( final File file ) throws IOException
 	{
 		final Model model = new Model();
-		final ModelGraph graph = model.getGraph();
+		final MasgitoffIds ids = readMasgitoff( model, file );
+		return Pair.of( model, ids );
+	}
+
+	public static MasgitoffIds readMasgitoff( final Model emptyModel, final File file ) throws IOException
+	{
+		final ModelGraph graph = emptyModel.getGraph();
 		final MasgitoffIds ids = new MasgitoffIds( graph );
 		final List< String > labels = LabelIo.readStringsChunked( new File( file, "spots_labels" ) );
 		final TagSetStructure tagSetStructure = TagIo.readTagSetStructure( new File( file, "tagsetstructure.raw" ) );
-		model.getTagSetModel().setTagSetStructure( tagSetStructure );
-		final TagIo.TagReader< Spot > spotTagReader = TagIo.createSpotsTagReader( new File( file, "spots_tag_lookup_table.raw" ), model );
+		emptyModel.getTagSetModel().setTagSetStructure( tagSetStructure );
+		final TagIo.TagReader< Spot > spotTagReader = TagIo.createSpotsTagReader( new File( file, "spots_tag_lookup_table.raw" ), emptyModel );
 		readSpots( new File( file, "spots" ), graph, labels, ids, spotTagReader );
-		final TagIo.TagReader< Link > linkTagReader = TagIo.createLinksTagReader( new File( file, "links_tag_lookup_table.raw" ), model );
+		final TagIo.TagReader< Link > linkTagReader = TagIo.createLinksTagReader( new File( file, "links_tag_lookup_table.raw" ), emptyModel );
 		readLinks( file, graph, ids, linkTagReader );
 		fillLabelIndex( ids, labels );
-		return Pair.of( model, ids );
+		return ids;
 	}
 
 	private static void fillLabelIndex( final MasgitoffIds ids, final List< String > labels )

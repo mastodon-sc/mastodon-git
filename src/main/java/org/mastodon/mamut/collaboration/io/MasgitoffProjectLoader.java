@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -39,15 +39,12 @@ import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
-import org.mastodon.graph.io.RawGraphIO.FileIdToGraphMap;
 import org.mastodon.mamut.ProjectModel;
 import org.mastodon.mamut.WindowManager;
-import org.mastodon.mamut.feature.MamutRawFeatureModelIO;
 import org.mastodon.mamut.io.MamutViewStateXMLSerialization;
 import org.mastodon.mamut.io.project.MamutImagePlusProject;
 import org.mastodon.mamut.io.project.MamutProject;
 import org.mastodon.mamut.io.project.MamutProjectIO;
-import org.mastodon.mamut.model.Link;
 import org.mastodon.mamut.model.Model;
 import org.mastodon.mamut.model.Spot;
 import org.mastodon.util.DummySpimData;
@@ -224,6 +221,8 @@ public class MasgitoffProjectLoader
 	 */
 	public static SharedBigDataViewerData loadImageData( final MamutProject project, final boolean authorizeSubstituteDummyData ) throws SpimDataException, IOException
 	{
+		if ( project.getDatasetXmlFile() == null )
+			return openDummyImageData( project );
 		// Check to what kind of data points the image file.
 		final String canonicalPath = project.getDatasetXmlFile().getAbsolutePath();
 
@@ -283,17 +282,7 @@ public class MasgitoffProjectLoader
 		{
 			try (final MamutProject.ProjectReader reader = project.openForReading())
 			{
-				final FileIdToGraphMap< Spot, Link > idmap = model.loadRaw( reader );
-				// Load features.
-				MamutRawFeatureModelIO.deserialize(
-						context,
-						model,
-						idmap,
-						reader );
-			}
-			catch ( final ClassNotFoundException e )
-			{
-				e.printStackTrace();
+				MasgitoffIo.readMasgitoff( model, new File( project.getProjectRoot(), "model" ) );
 			}
 		}
 
@@ -395,10 +384,10 @@ public class MasgitoffProjectLoader
 
 	private static SharedBigDataViewerData simpleDummyData( final MamutProject project )
 	{
-		try (final MamutProject.ProjectReader reader = project.openForReading())
+		try
 		{
 			final Model model = new Model( project.getSpaceUnits(), project.getTimeUnits() );
-			model.loadRaw( reader );
+			MasgitoffIo.readMasgitoff( model, new File( project.getProjectRoot(), "model" ) );
 			final String requiredImageSizeAsString = requiredImageSizeAsString( model );
 			return SharedBigDataViewerData.fromDummyFilename( requiredImageSizeAsString );
 		}

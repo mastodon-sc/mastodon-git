@@ -228,7 +228,6 @@ public class ModelAsserts
 				line.append( "->" );
 				line.append( spotToString( target ) );
 				line.append( ":" );
-				lines.add( line.toString() );
 				for ( int i = 0; i < edgeTags.size(); i++ )
 				{
 					TagSetStructure.Tag tag = edgeTags.get( i ).get( link );

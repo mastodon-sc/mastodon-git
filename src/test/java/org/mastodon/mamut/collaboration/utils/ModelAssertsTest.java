@@ -125,7 +125,7 @@ public class ModelAssertsTest
 				+ "== Tag set: index=1 name=tabset2 (no tags)\n"
 				+ "Spot(label=A, timepoint=0, position=[0.0, 0.0, 0.0], cov=[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]): 0=tag1\n"
 				+ "Spot(label=B, timepoint=1, position=[0.0, 0.0, 0.0], cov=[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]): 0=tag2\n"
-				+ "Spot(label=A, timepoint=0, position=[0.0, 0.0, 0.0], cov=[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])->Spot(label=B, timepoint=1, position=[0.0, 0.0, 0.0], cov=[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]):Spot(label=A, timepoint=0, position=[0.0, 0.0, 0.0], cov=[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])->Spot(label=B, timepoint=1, position=[0.0, 0.0, 0.0], cov=[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]): 0=tag1";
+				+ "Spot(label=A, timepoint=0, position=[0.0, 0.0, 0.0], cov=[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])->Spot(label=B, timepoint=1, position=[0.0, 0.0, 0.0], cov=[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]): 0=tag1";
 		assertEquals( expected, text );
 	}
 

@@ -72,7 +72,7 @@ public class ReloadFromDiskUtilsTest
 				Path resource = TestResources.asPath( "reload/project" + i + ".masgitoff" );
 				copyDirectoryFromTo( resource, projectFile );
 				ReloadFromDiskUtils.reloadFromDisk( open );
-				Model expected = MasgitoffIo.readMasgitoff( resource.resolve( "model" ).toFile() ).getLeft();
+				Model expected = MasgitoffIo.readMasgitoff( resource.resolve( "model" ).toFile() );
 				ModelAsserts.assertModelEquals( expected, open.getModel() );
 			}
 		}

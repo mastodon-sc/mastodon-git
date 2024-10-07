@@ -53,8 +53,10 @@ import org.eclipse.jgit.transport.PushResult;
 import org.eclipse.jgit.transport.RemoteRefUpdate;
 import org.mastodon.mamut.MainWindow;
 import org.mastodon.mamut.ProjectModel;
+import org.mastodon.mamut.collaboration.credentials.PersistentCredentials;
+import org.mastodon.mamut.collaboration.exceptions.GraphMergeConflictException;
+import org.mastodon.mamut.collaboration.exceptions.GraphMergeException;
 import org.mastodon.mamut.collaboration.exceptions.MastodonGitException;
-import org.mastodon.mamut.collaboration.io.MasgitoffIdsStore;
 import org.mastodon.mamut.collaboration.io.MasgitoffIo;
 import org.mastodon.mamut.collaboration.io.MasgitoffProjectLoader;
 import org.mastodon.mamut.collaboration.io.MasgitoffProjectSaver;
@@ -63,9 +65,6 @@ import org.mastodon.mamut.collaboration.utils.ConflictUtils;
 import org.mastodon.mamut.collaboration.utils.ReloadFromDiskUtils;
 import org.mastodon.mamut.io.project.MamutProject;
 import org.mastodon.mamut.model.Model;
-import org.mastodon.mamut.collaboration.credentials.PersistentCredentials;
-import org.mastodon.mamut.collaboration.exceptions.GraphMergeConflictException;
-import org.mastodon.mamut.collaboration.exceptions.GraphMergeException;
 import org.mastodon.mamut.tomancak.merging.MergeDatasets;
 import org.mastodon.mamut.tomancak.merging.MergeModels;
 import org.scijava.Context;
@@ -462,7 +461,7 @@ public class MastodonGitRepository
 
 	private Model loadModel( File projectRoot ) throws IOException
 	{
-		return MasgitoffIo.readMasgitoff( new File( projectRoot, "model" ) ).getLeft();
+		return MasgitoffIo.readMasgitoff( new File( projectRoot, "model" ) );
 	}
 
 	private static void merge( MamutProject project, Model modelA, Model modelB ) throws IOException
@@ -479,7 +478,7 @@ public class MastodonGitRepository
 		File modelFolder = new File( project.getProjectRoot(), "model" );
 		if ( modelFolder.isDirectory() )
 			FileUtils.deleteDirectory( modelFolder );
-		MasgitoffIo.writeMasgitoff( model, modelFolder, MasgitoffIdsStore.get( model ) );
+		MasgitoffIo.writeMasgitoff( model, modelFolder );
 	}
 
 	private static Model merge( final Model modelA, final Model modelB )

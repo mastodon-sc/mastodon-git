@@ -1,6 +1,7 @@
 package org.mastodon.mamut.collaboration.io;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -44,11 +45,10 @@ public class MasgitoffIoTest
 			final File file = new File( "tmp.masgitoff" );
 			if ( file.isDirectory() )
 				FileUtils.deleteDirectory( file );
-			final MasgitoffIds ids = new MasgitoffIds( model.getGraph() );
-			MasgitoffIo.writeMasgitoff( model, file, ids );
-			final Pair< Model, MasgitoffIds > newModelAndIds = MasgitoffIo.readMasgitoff( file );
-			ModelAsserts.assertModelEquals( model, newModelAndIds.getLeft() );
-			assertIdsEqual( ids, newModelAndIds.getRight() );
+			MasgitoffIo.writeMasgitoff( model, file );
+			final Model newModel = MasgitoffIo.readMasgitoff( file );
+			ModelAsserts.assertModelEquals( model, newModel );
+			assertIdsEqual( MasgitoffIo.getMasgitoffIds( model ), MasgitoffIo.getMasgitoffIds( newModel ) );
 		}
 	}
 
@@ -139,4 +139,14 @@ public class MasgitoffIoTest
 		return new TreeSet<>( Arrays.asList( values ) );
 	}
 
+	@Test
+	public void testGarbageCollection()
+	{
+		for ( int i = 0; i < 100; i++ )
+		{
+			final Model model = new Model();
+			MasgitoffIo.getMasgitoffIds( model );
+		}
+		assertTrue( MasgitoffIo.numberOfStoredMasgitoffIds() < 100 );
+	}
 }

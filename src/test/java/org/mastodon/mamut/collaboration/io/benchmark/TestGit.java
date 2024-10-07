@@ -67,7 +67,7 @@ public class TestGit
 			System.out.println( "Mastodon project size: " + FileUtils.sizeOfDirectory( GIT_REPO_FOLDER.resolve( MASTODON_PROJECT_FILENAME ).toFile() ) / BYTES_PER_MB + " MB" );
 			System.out.println( "Time save: " + saveSeconds );
 			System.out.println( "Time git: " + gitSeconds );
-			example.assertEqualsOriginal( MasgitoffIo.readMasgitoff( GIT_REPO_FOLDER.resolve( MASTODON_PROJECT_FILENAME ).toFile() ).getLeft() );
+			example.assertEqualsOriginal( MasgitoffIo.readMasgitoff( GIT_REPO_FOLDER.resolve( MASTODON_PROJECT_FILENAME ).toFile() ) );
 			System.out.println( "works!" );
 		}
 	}

@@ -8,9 +8,9 @@ import java.nio.file.NoSuchFileException;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.WeakHashMap;
 import java.util.function.ToIntFunction;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.mastodon.mamut.model.Link;
 import org.mastodon.mamut.model.Model;
 import org.mastodon.mamut.model.ModelGraph;
@@ -22,13 +22,21 @@ import gnu.trove.map.TObjectIntMap;
 public class MasgitoffIo
 {
 
-	public static void writeMasgitoff( final Model model, final File file, final MasgitoffIds masgitoffIds ) throws IOException
+	/**
+	 * This weak hash map remembers the file between reading and writing
+	 * Masgitoff files. This is necessary to keep the indices consistent
+	 * between subsequent write operations.
+	 */
+	private static final WeakHashMap< Model, MasgitoffIds > storedIndices = new WeakHashMap<>();
+
+	public static void writeMasgitoff( final Model model, final File file ) throws IOException
 	{
 		if ( !file.mkdir() )
 			throw new RuntimeException( "Could not create directory " + file.getAbsolutePath() );
 
 		final ModelGraph graph = model.getGraph();
 
+		final MasgitoffIds masgitoffIds = getMasgitoffIds( model );
 		masgitoffIds.fillIds( model );
 		final Index< Spot > spotIndex = masgitoffIds.getSpotIndex();
 		final Index< Link > linkIndex = masgitoffIds.getLinkIndex();
@@ -65,14 +73,14 @@ public class MasgitoffIo
 		}, ModelSerializer.getInstance().getEdgeSerializer() );
 	}
 
-	public static Pair< Model, MasgitoffIds > readMasgitoff( final File file ) throws IOException
+	public static Model readMasgitoff( final File file ) throws IOException
 	{
 		final Model model = new Model();
-		final MasgitoffIds ids = readMasgitoff( model, file );
-		return Pair.of( model, ids );
+		readMasgitoff( model, file );
+		return model;
 	}
 
-	public static MasgitoffIds readMasgitoff( final Model emptyModel, final File file ) throws IOException
+	public static void readMasgitoff( final Model emptyModel, final File file ) throws IOException
 	{
 		if ( !file.isDirectory() )
 			throw new NoSuchFileException( file.toString() );
@@ -86,8 +94,7 @@ public class MasgitoffIo
 		final TagIo.TagReader< Link > linkTagReader = TagIo.createLinksTagReader( new File( file, "links_tag_lookup_table.raw" ), emptyModel );
 		readLinks( file, graph, ids, linkTagReader );
 		fillLabelIndex( ids, labels );
-		MasgitoffIdsStore.put( emptyModel, ids );
-		return ids;
+		putMasgitoffIds( emptyModel, ids );
 	}
 
 	private static void fillLabelIndex( final MasgitoffIds ids, final List< String > labels )
@@ -165,4 +172,24 @@ public class MasgitoffIo
 		return new UUID( mostSigBits, leastSigBits );
 	}
 
+	public static MasgitoffIds getMasgitoffIds( final Model model )
+	{
+		MasgitoffIds ids = storedIndices.get( model );
+		if ( null == ids )
+		{
+			ids = new MasgitoffIds( model.getGraph() );
+			storedIndices.put( model, ids );
+		}
+		return ids;
+	}
+
+	public static void putMasgitoffIds( final Model model, final MasgitoffIds ids )
+	{
+		storedIndices.put( model, ids );
+	}
+
+	public static int numberOfStoredMasgitoffIds()
+	{
+		return storedIndices.size();
+	}
 }
